@@ -866,6 +866,201 @@ h1,h2,h3{letter-spacing:-.01em}
 .card,.box,.panel{border-radius:18px !important;border:1px solid var(--line) !important;box-shadow:none !important}
 .aigc-note,#aigcNote{display:none !important}
 
+
+/* ===== V4 设计稿重做 ===== */
+/* ============================================================
+   V4 · 按设计稿重做的视觉系统（成员 / 管理员 / 超管）
+   底色 #FBFBFA · 墨 #111112 · 灰 #8B8B92 · 线 #EFEFF1
+   ============================================================ */
+:root{
+  --paper:#FBFBFA; --ink:#111112; --ink-2:#3A3A40; --muted:#8B8B92; --muted-2:#AFAFB6;
+  --line:#EFEFF1; --surface:#F5F5F6; --accent:#E9405B;
+  --tab:58px; --bar:54px;
+  --font:"Inter","PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+}
+html,body{background:#E9E9EC;}
+.phone{background:var(--paper);max-width:430px;font-family:var(--font);-webkit-font-smoothing:antialiased;}
+.phone .appbar, .phone .tabbar{background:rgba(251,251,250,.92);backdrop-filter:blur(14px);}
+
+/* ---------- 通用排版 ---------- */
+body, p, div, span, a, li{color:var(--ink);}
+p.lede, .v2-lede{font-size:13px;line-height:1.8;color:var(--muted);}
+.eyebrow, .v2-eyebrow, .s, .k{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-2);font-weight:500;}
+h1,h2,h3,.h1,.h2,.h3,.c-title{font-weight:600;letter-spacing:-.025em;color:var(--ink);}
+.h1{font-size:33px;line-height:1.22;}
+.h2{font-size:17px;letter-spacing:-.015em;}
+.h3{font-size:13.5px;letter-spacing:.02em;}
+.small,hint,.hint{font-size:11px;line-height:1.7;color:var(--muted);}
+
+/* ---------- 顶栏 ---------- */
+.appbar{height:var(--bar);border-bottom:0;padding:0 14px;}
+.appbar .ab-title, .ab-title{font-size:11px;letter-spacing:.28em;font-weight:600;}
+.appbar .ab-sub, .ab-sub{font-size:9px;letter-spacing:.18em;color:var(--muted-2);}
+.icon-btn, .ab-avatar{width:34px;height:34px;border-radius:999px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+
+/* ---------- 底栏 ---------- */
+.tabbar{height:var(--tab);border-top:1px solid var(--line);background:#fff;}
+.tabbar .tab{font-size:10px;letter-spacing:.08em;color:var(--muted-2);}
+.tabbar .tab.on{color:var(--ink);}
+
+/* ---------- 容器 ---------- */
+.main, #view{padding:0 22px 26px;}
+.sec{margin-top:22px;}
+.rule{height:1px;background:var(--line);border:0;margin:18px 0;}
+
+/* ---------- 按钮 ---------- */
+.btn{border-radius:999px;height:44px;padding:0 22px;font-size:13px;font-weight:500;border:1px solid var(--line);background:#fff;color:var(--ink);letter-spacing:.01em;}
+.btn--ink{background:var(--ink);color:#fff;border-color:var(--ink);}
+.btn--ghost{background:#fff;color:var(--ink);border-color:var(--line);}
+.btn--sm{height:32px;padding:0 14px;font-size:11.5px;border-radius:999px;}
+.btn--danger{background:#fff;border-color:#F0D6DA;color:var(--accent);}
+.btn--block,.btn-block{width:100%;}
+.chip{border-radius:999px;height:30px;padding:0 14px;font-size:11px;border:1px solid var(--line);background:#fff;color:var(--muted);display:inline-flex;align-items:center;}
+.chip.active,.chip.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+/* ---------- 卡片 ---------- */
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:none;}
+.card.pad{padding:16px 18px;}
+.arow{border-bottom:1px solid var(--line);padding:14px 0;}
+
+/* ---------- 首页 ---------- */
+.v2-hero{padding-top:18px;}
+.v2-eyebrow{margin-bottom:14px;}
+.v2-hero .h1{font-size:33px;line-height:1.24;margin:0;}
+.v2-greet,.v2-desc{color:var(--muted);}
+.v2-days{margin-top:24px;border-top:1px solid var(--line);padding-top:16px;}
+.v2-days-num{font-size:50px;font-weight:600;letter-spacing:-.04em;line-height:1;}
+.v2-days-t{font-size:11px;color:var(--muted);}
+.v2-days-s{font-size:10px;color:var(--muted-2);letter-spacing:.06em;}
+.v2-entries{margin-top:10px;}
+.v2-entry{padding:16px 0;border-bottom:1px solid var(--line);}
+.v2-entry-t{font-size:13.5px;font-weight:500;}
+.v2-entry-s{font-size:11px;color:var(--muted);margin-top:3px;}
+.v2-entry .arw, .v2-entry i{color:var(--muted-2);}
+.v2-notice{background:var(--surface);border-radius:14px;padding:12px 14px;font-size:11px;color:var(--muted);}
+.v2-foot{margin-top:26px;border-top:1px solid var(--line);padding-top:14px;}
+
+/* ---------- 资源库 ---------- */
+.v2-bar{display:flex;gap:10px;align-items:center;margin:14px 0 4px;}
+.v2-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;margin-top:14px;}
+.v2-grid-item{border:0;background:transparent;}
+.v2-grid-cover{border-radius:14px;overflow:hidden;aspect-ratio:1/1.02;}
+.v2-grid-t{font-size:12px;font-weight:500;margin-top:8px;}
+.v2-grid-s{font-size:9.5px;color:var(--muted-2);margin-top:2px;letter-spacing:.04em;}
+.v2-addbtn{background:var(--ink);color:#fff;border-radius:999px;}
+
+/* ---------- 资源详情弹层 ---------- */
+.v2-preview{border-radius:14px;overflow:hidden;}
+.v2-author-n{font-size:12.5px;font-weight:500;}
+.v2-author-d{font-size:10px;color:var(--muted-2);}
+.v2-kvbox{background:var(--surface);border-radius:14px;padding:14px 16px;}
+.v2-kvbox .kv, .kv{border-bottom:1px solid var(--line);padding:9px 0;font-size:11.5px;}
+.v2-kvbox .kv:last-child{border-bottom:0;}
+.v2-cond{border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:10px;color:var(--muted);}
+.v2-like{height:44px;border-radius:999px;}
+.v2-praise{border-top:1px solid var(--line);}
+
+/* ---------- 我的（个人主页） ---------- */
+.zc-cover{height:124px;background:linear-gradient(135deg,#DCD5C8,#B7AEA0 60%,#8E857A);position:relative;}
+.zc-cover .zc-cover-btn{position:absolute;top:10px;right:16px;font-size:9px;letter-spacing:.12em;color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.36);border-radius:999px;padding:4px 10px;background:rgba(0,0,0,.12);}
+.zc-cover--dark{background:linear-gradient(135deg,#3A3A40,#1A1A1E 70%,#0B0B0C);}
+.zc-me{padding:0 22px;}
+.zc-me-head{display:flex;align-items:flex-end;gap:12px;margin-top:-30px;}
+.zc-av{width:64px;height:64px;border-radius:999px;border:3px solid var(--paper);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;overflow:hidden;}
+.zc-av img{width:100%;height:100%;object-fit:cover;}
+.zc-name{font-size:16px;font-weight:600;letter-spacing:-.01em;}
+.zc-badge{display:inline-flex;align-items:center;margin-top:5px;font-size:8.5px;letter-spacing:.14em;border-radius:999px;padding:3px 9px;}
+.zc-badge--member{color:var(--muted);background:#fff;border:1px solid var(--line);}
+.zc-badge--admin{color:#fff;background:var(--ink);border:1px solid var(--ink);}
+.zc-badge--super{color:#fff;background:var(--ink);border:1px solid var(--ink);letter-spacing:.1em;}
+.zc-sub{font-size:10px;color:var(--muted-2);margin-top:10px;letter-spacing:.02em;}
+.zc-id{display:flex;align-items:center;gap:8px;margin-top:9px;}
+.zc-id span.pill{border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:9px;letter-spacing:.1em;color:var(--muted);background:#fff;}
+.zc-id i{font-style:normal;font-size:8.5px;color:var(--muted-2);}
+.zc-stats{display:flex;gap:22px;margin-top:15px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+.zc-stats .n{font-size:16px;font-weight:600;letter-spacing:-.02em;}
+.zc-stats .l{font-size:8.5px;color:var(--muted-2);margin-top:2px;letter-spacing:.06em;}
+.zc-console-card{margin-top:14px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;background:#fff;}
+.zc-console-card--dark{background:var(--ink);border-color:var(--ink);}
+.zc-console-card--dark .t{color:#fff;}
+.zc-console-card--dark .s{color:rgba(255,255,255,.55);}
+.zc-console-card .t{font-size:11.5px;font-weight:500;}
+.zc-console-card .s{font-size:8.5px;color:var(--muted-2);margin-top:2px;}
+.zc-console-card .go{font-size:9px;border-radius:999px;padding:6px 12px;background:var(--ink);color:#fff;}
+.zc-console-card--dark .go{background:#fff;color:var(--ink);}
+.zc-row{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+.zc-row:last-child{border-bottom:0;}
+.zc-row .r{color:var(--muted-2);font-size:11px;}
+.zc-row small{font-size:9px;color:var(--muted-2);margin-left:6px;letter-spacing:.04em;}
+.zc-note{font-size:8.5px;color:var(--muted-2);line-height:1.9;margin-top:8px;}
+.zc-signout{margin:22px 0 6px;text-align:center;font-size:11px;color:var(--muted-2);letter-spacing:.1em;}
+
+/* ---------- 控制台 ---------- */
+.c-dark{background:var(--ink);color:#fff;margin:0 -22px;padding:22px 22px 20px;}
+.c-dark .eyebrow{color:rgba(255,255,255,.42);}
+.c-dark .c-title{color:#fff;font-size:22px;margin-top:6px;}
+.c-dark .c-sub{color:rgba(255,255,255,.5);font-size:10.5px;line-height:1.75;margin-top:6px;}
+.c-dark .c-back{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:9px;letter-spacing:.1em;color:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.24);border-radius:999px;padding:5px 11px;background:transparent;}
+.c-metrics{display:grid;grid-template-columns:1fr 1fr;background:#fff;border-bottom:1px solid var(--line);margin:0 -22px 16px;}
+.c-metrics .m{padding:16px 22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+.c-metrics .m:last-child,.c-metrics .m:nth-child(2n){border-right:0;}
+.c-metrics .n{font-size:22px;font-weight:600;letter-spacing:-.03em;color:var(--ink);}
+.c-metrics .l{font-size:9px;letter-spacing:.14em;color:var(--muted-2);margin-top:3px;text-transform:uppercase;}
+.admin-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;margin:0 -22px;padding-left:22px;padding-right:22px;border-bottom:1px solid var(--line);}
+.admin-tabs::-webkit-scrollbar{display:none;}
+.atab{flex:0 0 auto;border-radius:999px;padding:7px 13px;font-size:11px;color:var(--muted);border:1px solid var(--line);background:#fff;white-space:nowrap;}
+.atab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.atab b{margin-left:4px;font-weight:500;color:var(--accent);}
+.atab.active b{color:#fff;}
+.pane-head{display:flex;align-items:flex-end;justify-content:space-between;margin:18px 0 6px;}
+.pane-head .h2{font-size:17px;margin-top:3px;}
+.pane-head .pill{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:9.5px;color:var(--muted);}
+.blank{border:1px dashed var(--line);border-radius:16px;padding:34px 20px;text-align:center;color:var(--muted-2);font-size:11.5px;}
+
+/* 聊天 */
+.v2-chat-b{padding:10px 13px;border-radius:14px;font-size:12px;line-height:1.7;}
+.chat-mode .main{padding:0 18px;}
+
+/* 登录 / 入场（gate） */
+.gate{background:var(--paper);padding:26px 26px 30px;}
+.g-mark{width:44px;height:44px;border-radius:999px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;}
+.gate .h1{font-size:33px;margin-top:12px;}
+.gate .lede{color:var(--muted);font-size:12.5px;line-height:1.8;}
+.gate .input,.input{height:46px;border:1px solid var(--line);border-radius:14px;background:#fff;font-size:13px;padding:0 14px;width:100%;}
+.gate .label,.label{font-size:9.5px;letter-spacing:.18em;color:var(--muted-2);text-transform:uppercase;margin-bottom:7px;}
+.gate .btn{height:48px;}
+.gate .seg{border-radius:999px;}
+
+/* 弹层 */
+.modal-panel, .sheet{border-radius:22px;}
+.modal-panel .h2{font-size:18px;}
+
+/* 去掉旧的卡片盒子，回到设计稿的「整页 + 细线」 */
+.v2-hero, .v2-entries, .v2-entry, .v2-list, .v2-item, .v2-praise, .sec, .zone{
+  background:transparent!important; box-shadow:none!important; border-radius:0!important;
+  border:0!important; border-bottom:1px solid var(--line)!important; padding-left:0!important; padding-right:0!important;
+}
+.v2-hero{border-bottom:0!important;padding-top:10px!important;}
+.v2-entries{border-bottom:0!important;margin-top:8px;}
+.v2-entry{padding:15px 0!important;}
+.v2-entry:last-child{border-bottom:0!important;}
+.v2-days{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0 18px!important;margin-top:22px;display:flex;align-items:flex-start;gap:14px;}
+.v2-days-num{font-size:46px!important;line-height:1!important;}
+.v2-days-t{font-size:12px!important;color:var(--ink)!important;}
+.v2-days-s{font-size:10px!important;color:var(--muted-2)!important;margin-top:3px;}
+.v2-days-wrap,.v2-days-r{display:flex;flex-direction:column;justify-content:center;}
+#view{background:var(--paper);}
+.phone{background:var(--paper)!important;}
+
+.zc-row{padding:12px 0!important;line-height:1.4;}
+.v2-entry{padding:13px 0!important;line-height:1.4;}
+.v2-entry .v2-entry-t{font-size:13.5px;line-height:1.4;}
+.admin-tabs{flex-wrap:nowrap!important;}
+.c-metrics .m{padding:13px 20px!important;}
+.c-metrics .n{line-height:1.15!important;}
+.v2-days{background:transparent!important;box-shadow:none!important;border-radius:0!important;}
+#view{padding-bottom:34px!important;}
+
 </style>
 </head>
 <body>
@@ -896,7 +1091,6 @@ h1,h2,h3{letter-spacing:-.01em}
 
 <div class="modal-root" id="modalRoot"></div>
 <div class="toasts" id="toasts"></div>
-
 
 <script>
 /* ============================================================
@@ -1775,7 +1969,6 @@ h1,h2,h3{letter-spacing:-.01em}
     utils: { uid, now, esc, fmtDate, fmtTime, relTime, digest }
   };
 })();
-
 /* ============================================================
    Zicora Community — 图标 / 组件 / 首页 / 字卡 / 资源库
    ============================================================ */
@@ -2186,7 +2379,6 @@ h1,h2,h3{letter-spacing:-.01em}
     renderAppBar, openMenu, viewHome, viewZicora, viewLibrary, openResource, ROUTES, TABS, TONES,
     getLibState: () => libState, setLibState: (s) => Object.assign(libState, s) });
 })();
-
 /* ============================================================
    Zicora Community — 反馈 / 聊天 / 夸夸墙 / 个人中心 / 登录
    ============================================================ */
@@ -2535,54 +2727,82 @@ h1,h2,h3{letter-spacing:-.01em}
     const myBug = Store.data.bugs.filter((b) => b.userId === me.id);
     const bookmarked = Store.data.resources.filter((r) => (r.bookmarkedBy || []).indexOf(me.id) > -1);
     const myPraise = Store.data.praise.filter((p) => p.authorId === me.id);
-    const tabs = [
-      { id: 'subs', name: '投稿', n: myRes.length },
-      { id: 'bugs', name: '反馈', n: myBug.length },
-      { id: 'marks', name: '收藏', n: bookmarked.length },
-      { id: 'praise', name: '夸夸', n: myPraise.length },
-      { id: 'account', name: '设置', n: 0 },
-      { id: 'privacy', name: '隐私', n: 0 }
-    ];
-
-    const roleName = me.role === 'super' ? '超级管理员' : me.role === 'admin' ? '管理员' : '正式成员';
-    const sid = String(me.id || '').replace(/-/g, '').slice(0, 8).toUpperCase();
-    const cover = me.banner ? "background-image:url('" + esc(me.banner) + "')" : '';
+    const likesGiven = myRes.reduce((a, r) => a + (r.likes || 0), 0);
+    const dlTotal = myRes.reduce((a, r) => a + (r.downloads || 0), 0);
+    const praised = Store.data.praise.filter((p) => myRes.some((r) => p.targetId === r.id || p.targetId === String(r._db))).length;
+    const isSuper = me.role === 'super';
+    const isAdmin = Store.isAdmin();
+    const memCount = Store.data.users.filter((u) => ['member','admin','super'].indexOf(u.role) >= 0).length;
+    const pendJoins = Store.waitApps ? Store.waitApps('join').length : 0;
+    const pendRes = Store.data.resources.filter((r) => r.status === 'pending').length;
+    const pendAdmin = Store.waitApps ? Store.waitApps('admin').length : 0;
+    const codes = Store.data.invites.filter((i) => i.status === 'unused').length;
+    const admins = Store.data.users.filter((u) => u.role === 'admin').length;
+    const sid = isSuper ? String(me.id || '').replace(/-/g, '').slice(0, 5).toUpperCase()
+                        : 'ID ' + String(me.id || '').replace(/-/g, '').slice(0, 8).toUpperCase();
+    const cover = me.banner ? "background-image:url('" + esc(me.banner) + "');background-size:cover;background-position:center" : '';
+    const badge = isSuper ? '<div class="zc-badge zc-badge--super">站长 · 超级管理员</div>'
+                : isAdmin ? '<div class="zc-badge zc-badge--admin">管理员</div>'
+                : '<div class="zc-badge zc-badge--member">成员</div>';
+    const joined = me.joined ? fmtDate(me.joined) : '';
+    const days = (function () {
+      if (!me.joined) return 0;
+      const n = Math.floor((Date.now() - new Date(me.joined).getTime()) / 86400000) + 1;
+      return n < 1 ? 1 : n;
+    })();
+    const stat4 = isSuper
+      ? [[memCount,'成员'],[Store.data.resources.length,'资源'],[dlTotal + Store.data.resources.reduce((a,r)=>a+(r.downloads||0),0),'总下载'],[admins,'管理员']]
+      : isAdmin
+      ? [[myRes.length,'资源'],[likesGiven,'收到赞'],[myPraise.length,'我夸过'],[codes,'可用码']]
+      : [[myRes.length,'资源'],[likesGiven,'收到赞'],[praised,'被夸'],[dlTotal,'下载']];
 
     return '' +
-    '<div class="cover" style="' + cover + '">' +
-      '<button class="cover-edit" id="editCoverBtn">封面</button>' +
+    '<div class="zc-cover ' + (isSuper ? 'zc-cover--dark' : '') + '" style="' + cover + '">' +
+      '<button class="zc-cover-btn" id="editCoverBtn">换封面</button>' +
     '</div>' +
-
-    '<div class="me-head">' +
-      avatar(me, 'xl') +
-      '<div class="pt-main">' +
-        '<div class="me-name">' + esc(me.name) + '</div>' +
-        '<div class="me-id">ID <b>' + esc(sid) + '</b><span class="pill" style="margin-left:4px">' + roleName + '</span></div>' +
+    '<div class="zc-me">' +
+      '<div class="zc-me-head">' +
+        '<div class="zc-av">' + (/^https?:|^data:/.test(me.avatar || '') ? '<img src="' + esc(me.avatar) + '" alt="">' : (isSuper ? '71931' : esc((me.name || 'Z').slice(0,1))) ) + '</div>' +
+        '<div style="padding-top:32px">' +
+          '<div class="zc-name">' + esc(isSuper ? 'Zicora 站长' : me.name) + '</div>' +
+          badge +
+        '</div>' +
+        '<button class="icon-btn" id="editProfile" aria-label="编辑资料" style="margin-left:auto">' + ic('edit') + '</button>' +
       '</div>' +
-      '<button class="icon-btn" id="editProfile" aria-label="编辑资料">' + ic('edit') + '</button>' +
-    '</div>' +
+      '<div class="zc-sub">' + (isSuper ? '建站 ' + days + ' 天 · 站点拥有者' : esc(me.bio || '字卡 / 主题') + (joined ? ' · 加入 ' + days + ' 天' : '')) + '</div>' +
+      '<div class="zc-id"><span class="pill">' + esc(sid) + '</span><i>' + (isSuper ? '固定不变 · 转让需密码' : '固定不变') + '</i></div>' +
 
-    '<p class="lede" style="margin:2px 0 18px;font-size:12.5px;color:' + (me.bio ? 'var(--ink-2)' : 'var(--muted-2)') + '">' + esc(me.bio || '还没有自我介绍') + '</p>' +
+      (isAdmin
+        ? '<div class="zc-console-card ' + (isSuper ? 'zc-console-card--dark' : '') + '" data-go="#/admin">' +
+            '<div><div class="t">' + (isSuper ? '进入超级管理后台' : '进入管理后台') + '</div>' +
+            '<div class="s">' + (isSuper ? '管理员申请 ' + pendAdmin + ' · 待审加入 ' + pendJoins : '待审 ' + (pendJoins + pendRes) + ' 项 · 可用码 ' + codes + ' 枚') + '</div></div>' +
+            '<div class="go">打开</div></div>'
+        : '') +
 
-    '<div class="pstats">' +
-      '<div class="stat" data-mtab="subs"><div class="s-num">' + myRes.length + '</div><div class="s-cap">投稿</div></div>' +
-      '<div class="stat" data-mtab="bugs"><div class="s-num">' + myBug.length + '</div><div class="s-cap">反馈</div></div>' +
-      '<div class="stat" data-mtab="marks"><div class="s-num">' + bookmarked.length + '</div><div class="s-cap">收藏</div></div>' +
-      '<div class="stat" data-mtab="praise"><div class="s-num">' + myPraise.length + '</div><div class="s-cap">夸夸</div></div>' +
-    '</div>' +
+      '<div class="zc-stats">' + stat4.map((x) => '<div><div class="n">' + x[0] + '</div><div class="l">' + x[1] + '</div></div>').join('') + '</div>' +
 
-    '<div class="row gap-8 wrap" style="margin-bottom:22px">' +
-      '<button class="btn btn--sm" data-go="#/zicora">' + ic('card') + ' 字卡传讯</button>' +
-      '<button class="btn btn--sm" data-go="#/bugs">' + ic('bug') + ' 反馈</button>' +
-      (Store.isAdmin() ? '<button class="btn btn--sm" data-go="#/admin">' + ic('shield') + ' 控制台</button>'
-        : '<button class="btn btn--sm" data-apply-admin="1">' + ic('shield') + (Store.adminAppOf(me.id) ? ' 管理员申请审核中' : ' 申请成为管理员') + '</button>') +
-      '<button class="btn btn--sm" id="editProfileBtn">' + ic('edit') + ' 编辑资料</button>' +
-    '</div>' +
+      '<div class="zc-row" id="editProfileBtn"><div>编辑资料<small>头像 / 名字 / 简介</small></div><div class="r">→</div></div>' +
+      '<div class="zc-row" data-mtab="subs"><div>我的上传<small>' + myRes.length + ' 份</small></div><div class="r">→</div></div>' +
+      '<div class="zc-row" data-mtab="marks"><div>下载记录<small>收藏 ' + bookmarked.length + '</small></div><div class="r">→</div></div>' +
+      '<div class="zc-row" data-mtab="praise"><div>我收到的夸<small>' + praised + ' 条 · 我写的 ' + myPraise.length + '</small></div><div class="r">→</div></div>' +
+      (isAdmin
+        ? '<div class="zc-row" data-go="#/admin"><div>' + (isSuper ? '任命 / 收回管理员' : '我的审核记录') + '</div><div class="r">→</div></div>'
+        : '<div class="zc-row" data-apply-admin="1"><div>申请成为管理员' + (Store.adminAppOf && Store.adminAppOf(me.id) ? '<small>审核中</small>' : '') + '</div><div class="r">→</div></div>') +
+      (isSuper
+        ? '<div class="zc-row" data-go="#/admin"><div>站点设置<small>开关 / 清空 / 导出</small></div><div class="r">→</div></div>' +
+          '<div class="zc-row" data-go="#/admin"><div>操作日志</div><div class="r">→</div></div>'
+        : '') +
 
-    '<div class="rail" style="margin:0 -18px 16px">' + tabs.map((t) =>
-      '<div class="chip ' + (meTab === t.id ? 'active' : '') + '" data-mtab="' + t.id + '" style="flex:0 0 auto">' + t.name + (t.n ? ' ' + t.n : '') + '</div>').join('') + '</div>' +
+      '<div class="zc-note">' + (isSuper ? '唯一能批管理员、清空数据的人。<br>这个 ID 不能改，也不能被别人占。'
+          : isAdmin ? '能审核、发码、删帖；不能批管理员、不能删站。'
+          : 'ID 由系统分配，终身不变；封面、头像、名字随时可以换。') + '</div>' +
 
-    '<div id="mePane">' + mePane(meTab, me) + '</div>';
+      '<div class="rail" style="margin:18px -22px 0;padding:0 22px">' + [
+        ['subs','投稿'],['marks','收藏'],['praise','夸夸'],['bugs','反馈'],['account','账号']
+      ].map((t) => '<div class="chip ' + (meTab === t[0] ? 'active' : '') + '" data-mtab="' + t[0] + '" style="flex:0 0 auto">' + t[1] + '</div>').join('') + '</div>' +
+      '<div id="mePane" style="margin-top:14px">' + mePane(meTab, me) + '</div>' +
+      '<div class="zc-signout" id="signOut2">退出登录</div>' +
+    '</div>';
   }
 
   function mePane(tab, me) {
@@ -2738,7 +2958,6 @@ h1,h2,h3{letter-spacing:-.01em}
     getBugDraft: () => bugDraft, setBugDraft: (v) => { bugDraft = Object.assign(bugDraft, v); },
     getMeTab: () => meTab, setMeTab: (v) => { meTab = v; }, mePane, getRepoFilter: () => repoFilter, setRepoFilter: (v) => { repoFilter = v; }, readFile };
 })();
-
 /* ============================================================
    Zicora Community — 入口页（按身份自动分流）/ 申请材料 / 等待与通过
    同一个网址：老账号登录 → 按角色直接进去；新访客 → 交材料申请
@@ -2924,7 +3143,6 @@ h1,h2,h3{letter-spacing:-.01em}
 
   window.ZG = { viewEntry, viewMine, setUserMode, bindChanges, hydrateProofs, getUserMode: () => userMode };
 })();
-
 /* ============================================================
    Zicora Community — 管理后台（仅超级管理员）
    ============================================================ */
@@ -2953,27 +3171,37 @@ h1,h2,h3{letter-spacing:-.01em}
 
   function viewAdmin(tab) {
     adminTab = tab || adminTab;
-    const pend = Store.waitApps('join').length + Store.waitApps('admin').length;
-    const members = Store.data.users.filter((u) => ['member', 'admin', 'super'].indexOf(u.role) >= 0).length;
-    const codes = Store.data.invites.filter((i) => i.status === 'unused').length;
     const me = Store.me();
     const isSuper = me && me.role === 'super';
+    const admins = Store.data.users.filter((u) => u.role === 'admin').length;
+    const joins = Store.waitApps('join').length;
+    const resPend = Store.data.resources.filter((r) => r.status === 'pending').length;
+    const codes = Store.data.invites.filter((i) => i.status === 'unused').length;
+    const members = Store.data.users.filter((u) => ['member', 'admin', 'super'].indexOf(u.role) >= 0).length;
+    const admReq = Store.waitApps('admin').length;
+    // 管理员不得批管理员：管理员端看不到「管理员申请」
+    const tabs = (isSuper ? [['joins','加入审核'],['adminreq','管理员申请'],['resources','资源审核'],['invites','邀请码'],['members','成员'],['praise','内容管理'],['channels','频道'],['perm','权限']]
+                          : [['joins','加入审核'],['resources','资源审核'],['invites','邀请码'],['members','成员'],['praise','内容管理'],['channels','频道']]);
+    const metrics = isSuper
+      ? [[admReq,'管理员申请'],[joins,'待审加入'],[resPend,'待审资源'],[members,'成员总数']]
+      : [[joins,'待审申请'],[resPend,'待审资源'],[codes,'可用码'],[members,'成员']];
     return '' +
-    '<div class="console">' +
-      '<div class="eyebrow">' + (isSuper ? 'Super Console' : 'Console') + '</div>' +
-      '<div class="c-title">' + (isSuper ? '超级管理员控制台' : '管理员控制台') + '</div>' +
-      '<div class="c-sub">' + esc(me ? me.name : '') + '，这里只有你看得到。审材料、发邀请码、管成员都在这一页。' + '</div>' +
-      '<div class="c-metrics">' +
-        '<div class="m"><div class="n">' + pend + '</div><div class="l">待处理</div></div>' +
-        '<div class="m"><div class="n">' + members + '</div><div class="l">成员</div></div>' +
-        '<div class="m"><div class="n">' + codes + '</div><div class="l">可用码</div></div>' +
-      '</div>' +
+    '<div class="c-dark">' +
+      '<div class="eyebrow">Console · ' + (isSuper ? 'Super' : 'Admin') + '</div>' +
+      '<div class="c-title">' + (isSuper ? '超级管理后台' : '管理后台') + '</div>' +
+      '<div class="c-sub">' + esc(me ? me.name : '') + ' · ' + (isSuper ? '站点拥有者' : '管理员 · 不是超级管理员') + '<br>' +
+        (isSuper ? '所有权限，包括任命管理员与删站' : '能审核 · 能发码 · 能删帖') + '</div>' +
+      '<button class="c-back" data-go="#/home">回社区浏览 →</button>' +
     '</div>' +
-
-    '<div class="admin-tabs">' + TABS.map((t) =>
-      '<div class="atab ' + (adminTab === t.id ? 'active' : '') + '" data-atab="' + t.id + '">' + t.name +
-      (t.n() ? '<b>' + t.n() + '</b>' : '') + '</div>').join('') + '</div>' +
-
+    '<div class="c-metrics">' + metrics.map((m) => '<div class="m"><div class="n">' + m[0] + '</div><div class="l">' + m[1] + '</div></div>').join('') + '</div>' +
+    '<div class="admin-tabs">' + tabs.map((t) => {
+      let n = 0;
+      if (t[0] === 'joins') n = joins;
+      if (t[0] === 'adminreq') n = admReq;
+      if (t[0] === 'resources') n = resPend;
+      if (t[0] === 'invites') n = codes;
+      return '<div class="atab ' + (adminTab === t[0] ? 'active' : '') + '" data-atab="' + t[0] + '">' + t[1] + (n ? '<b>' + n + '</b>' : '') + '</div>';
+    }).join('') + '</div>' +
     '<div id="adminPane">' + pane(adminTab) + '</div>';
   }
 
@@ -3267,7 +3495,6 @@ h1,h2,h3{letter-spacing:-.01em}
   window.ZV3 = { viewAdmin, getAdminTab: () => adminTab, setAdminTab: (v) => { adminTab = v; },
     getResTab: () => resTab, setResTab: (v) => { resTab = v; }, getBugFilter: () => bugFilter, setBugFilter: (v) => { bugFilter = v; }, pane };
 })();
-
 
 /* ============================================================
    Zicora Community — 路由 / 事件 / 交互
@@ -4322,7 +4549,6 @@ h1,h2,h3{letter-spacing:-.01em}
 
 
 
-
 /* ============================================================
    Zicora v2 · 叠加层（首页 / 资源库 / 夸夸 / 上传 / 下载追溯）
    放在所有分片之后加载，用同名导出覆盖旧视图
@@ -5026,4 +5252,3 @@ h1,h2,h3{letter-spacing:-.01em}
 </script>
 </body>
 </html>
-
