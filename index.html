@@ -1329,6 +1329,12 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
 #view .c-metrics .n, .c-metrics .n{font-family:var(--sans)!important;font-weight:600!important;font-size:30px!important;letter-spacing:-.03em!important}
 .atab{font-size:9.5px!important;padding:0 9px!important}
 
+.g-tab{flex:0 0 auto!important}
+.rep-link{display:block;width:100%;margin:14px 0 0;padding:10px 0;background:transparent;border:0;font-size:10px;letter-spacing:.06em;color:#B4B4BB;text-align:left}
+.rep-mini{margin-left:auto;font-size:9.5px;color:#C2C2C8;letter-spacing:.04em}
+#view .praise .p-meta{justify-content:flex-start;gap:18px}
+.rp-why.active{background:var(--ink)!important;color:#fff!important}
+
 </style>
 </head>
 <body>
@@ -1432,7 +1438,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
   function emptyData() {
     return {
       users: [], announcements: [], config: Object.assign({}, EMPTY_CONFIG),
-      resources: [], praise: [], channels: [], chats: { c1: [], c2: [], c3: [], c4: [] },
+      resources: [], praise: [], channels: [], reports: [], chats: { c1: [], c2: [], c3: [], c4: [] },
       bugs: [], invites: [], apps: [], session: { userId: null }, meta: { version: 3 }
     };
   }
@@ -1659,7 +1665,8 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
           http('/rest/v1/invites?select=*&order=created_at.desc'),
           http('/rest/v1/announcements?select=*&order=created_at.desc'),
           http('/rest/v1/site_config?select=*&limit=1'),
-          http('/rest/v1/applications?select=*&order=id.desc')
+          http('/rest/v1/applications?select=*&order=id.desc'),
+          http('/rest/v1/reports?select=*&order=created_at.desc').catch(() => [])
         ]);
       } catch (e) {
         // 令牌过期不等于没登录：先换一次令牌再重试，只有确实失效才退回登录页
@@ -1671,7 +1678,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
         return this.data;
       }
       const prof = raw[0], chan = raw[1], res = raw[2], pra = raw[3], plike = raw[4], pcom = raw[5],
-        rlike = raw[6], rbook = raw[7], chat = raw[8], bug = raw[9], brep = raw[10], inv = raw[11], ann = raw[12], cfg = raw[13], apps = raw[14];
+        rlike = raw[6], rbook = raw[7], chat = raw[8], bug = raw[9], brep = raw[10], inv = raw[11], ann = raw[12], cfg = raw[13], apps = raw[14], rep = raw[15];
 
       const likeUsers = {};
       (plike || []).forEach((x) => { (likeUsers[x.praise_id] = likeUsers[x.praise_id] || []).push(x.user_id); });
@@ -1705,6 +1712,11 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
         id: a.id, kind: a.kind, user_id: a.user_id, name: a.name, reason: a.reason || '',
         evidence: a.evidence || {}, status: a.status, code: a.invite_code || '',
         note: a.note || '', date: a.created_at, by: a.reviewed_by || '', at: a.reviewed_at || null
+      }));
+      d.reports = (rep || []).map((x) => ({
+        id: 'rp' + x.id, _db: x.id, kind: x.kind || 'res', targetId: String(x.target_id || ''),
+        targetLabel: x.target_label || '', reason: x.reason || '', note: x.note || '',
+        reporter: x.reporter || '', status: x.status || 'open', date: x.created_at
       }));
       const c0 = (cfg || [])[0];
       if (c0) {
@@ -2372,6 +2384,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
       '<div class="p-meta">' +
         '<span class="like ' + (liked ? 'on' : '') + '" data-like="' + p.id + '">' + ic('heart') + '<span>' + p.likedBy.length + '</span></span>' +
         '<span class="like" data-comment="' + p.id + '">' + ic('chat') + '<span>' + p.comments.length + '</span></span>' +
+        '<span class="rep-mini" data-report="praise" data-id="' + esc(String(p._db || p.id)) + '" data-label="' + esc(u.name + ' 的夸夸') + '">举报</span>' +
       '</div>' +
     '</div>';
   }
@@ -3431,6 +3444,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
     { id: 'members', name: '成员', n: () => 0 },
     { id: 'invites', name: '邀请码', n: () => Store.data.invites.filter((i) => i.status === 'unused').length },
     { id: 'resources', name: '资源', n: () => Store.data.resources.filter((r) => r.status === 'pending').length },
+    { id: 'reports', name: '举报', n: () => (Store.data.reports || []).filter((r) => r.status === 'open').length },
     { id: 'config', name: '地址配置', n: () => 0 },
     { id: 'bugs', name: 'BUG', n: () => Store.data.bugs.filter((b) => b.status === 'pending').length },
     { id: 'channels', name: '频道', n: () => 0 },
@@ -3450,8 +3464,8 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
     const members = Store.data.users.filter((u) => ['member', 'admin', 'super'].indexOf(u.role) >= 0).length;
     const admReq = Store.waitApps('admin').length;
     // 管理员不得批管理员：管理员端看不到「管理员申请」
-    const tabs = (isSuper ? [['joins','加入审核'],['adminreq','管理员申请'],['resources','资源审核'],['invites','邀请码'],['members','成员'],['praise','内容管理'],['channels','频道'],['perm','权限']]
-                          : [['joins','加入审核'],['resources','资源审核'],['invites','邀请码'],['members','成员'],['praise','内容管理'],['channels','频道']]);
+    const tabs = (isSuper ? [['joins','加入审核'],['adminreq','管理员申请'],['resources','资源审核'],['reports','举报'],['invites','邀请码'],['members','成员'],['praise','内容管理'],['perm','权限']]
+                          : [['joins','加入审核'],['resources','资源审核'],['reports','举报'],['invites','邀请码'],['members','成员'],['praise','内容管理']]);
     const metrics = isSuper
       ? [[admReq,'管理员申请'],[joins,'待审加入'],[resPend,'待审资源'],[members,'成员总数']]
       : [[joins,'待审申请'],[resPend,'待审资源'],[codes,'可用码'],[members,'成员']];
@@ -3470,6 +3484,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
       if (t[0] === 'adminreq') n = admReq;
       if (t[0] === 'resources') n = resPend;
       if (t[0] === 'invites') n = codes;
+      if (t[0] === 'reports') n = (Store.data.reports || []).filter((x) => x.status === 'open').length;
       return '<div class="atab ' + (adminTab === t[0] ? 'active' : '') + '" data-atab="' + t[0] + '">' + t[1] + (n ? '<b>' + n + '</b>' : '') + '</div>';
     }).join('') + '</div>' +
     '<div id="adminPane">' + pane(adminTab) + '</div>';
@@ -3481,6 +3496,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
     if (tab === 'members') return paneMembers();
     if (tab === 'invites') return paneInvites();
     if (tab === 'resources') return paneResources();
+    if (tab === 'reports') return paneReports();
     if (tab === 'config') return paneConfig();
     if (tab === 'bugs') return paneBugs();
     if (tab === 'channels') return paneChannels();
@@ -3615,6 +3631,34 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
           '<button class="btn btn--xs btn--danger" data-r-del="' + r.id + '">删除</button>' +
         '</div></div>';
     }).join('') : '<div class="blank"><div class="b-line"></div><p>这个状态下没有资源。</p></div>');
+  }
+
+  /* ---------- 举报处理 ---------- */
+  function paneReports() {
+    const list = (Store.data.reports || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    const open = list.filter((x) => x.status !== 'done');
+    const done = list.filter((x) => x.status === 'done');
+    const row = (x) => {
+      const t = x.kind === 'praise' ? '夸夸' : '资源';
+      return '<div class="arow">' +
+        '<div class="row between"><span style="font-size:12px">' + esc(x.targetLabel || '未命名') + '</span>' +
+          '<span class="tag">' + t + '</span></div>' +
+        '<div class="small" style="font-size:10px">匿名成员 · ' + fmtDate(x.date) + ' · 理由：' + esc(x.reason) + '</div>' +
+        (x.note ? '<div class="quote" style="margin-top:0">' + esc(x.note) + '</div>' : '') +
+        (x.status === 'done'
+          ? '<div class="small" style="font-size:10px;margin-top:2px">已处理</div>'
+          : '<div class="btn-row" style="margin-top:2px">' +
+            '<button class="btn btn--xs btn--danger" data-rep-down="' + esc(x.targetId) + '" data-kind="' + x.kind + '" data-db="' + x._db + '">' +
+              (x.kind === 'praise' ? '删除这条夸夸' : '下架这份资源') + '</button>' +
+            '<button class="btn btn--xs btn--ghost" data-rep-ignore="' + x._db + '">忽略</button></div>') +
+      '</div>';
+    };
+    return '' +
+    '<div class="pane-head"><div><span class="s">Reports</span><h2 class="h2">举报</h2></div>' +
+      '<span class="pill">待处理 ' + open.length + '</span></div>' +
+    '<div class="banner">' + ic('shield') + '<span>举报是匿名的：你不该知道是谁报的，也不用知道。先看内容，再决定下架还是忽略。</span></div>' +
+    (open.length ? open.map(row).join('') : '<div class="blank"><div class="b-line"></div><p>没有待处理的举报。</p></div>') +
+    (done.length ? '<div class="sec-head" style="margin-top:18px"><h2 class="h2" style="font-size:13px">已处理</h2></div>' + done.map(row).join('') : '');
   }
 
   /* ---------- 地址配置 ---------- */
@@ -4251,6 +4295,30 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
       return;
     }
 
+    /* 举报 */
+    const rp = hit('data-report');
+    if (rp) { if (ZV.reportOpen) ZV.reportOpen(rp.getAttribute('data-report'), rp.getAttribute('data-id'), rp.getAttribute('data-label')); return; }
+    const rdw = hit('data-rep-down');
+    if (rdw) {
+      const rid = rdw.getAttribute('data-rep-down'), kind = rdw.getAttribute('data-kind'), dbid = rdw.getAttribute('data-db');
+      const call = kind === 'praise'
+        ? Z.SB.http('/rest/v1/praise?id=eq.' + rid, { method: 'DELETE' })
+        : Z.SB.http('/rest/v1/resources?id=eq.' + rid, { method: 'PATCH', body: { status: 'offshelf' } });
+      call.then(function () { return Z.SB.http('/rest/v1/reports?id=eq.' + dbid, { method: 'PATCH', body: { status: 'done' } }); })
+        .then(function () { return Store.hydrate(); })
+        .then(function () { toast('已处理'); render(); })
+        .catch(function (e) { toast('处理失败：' + (e.message || '')); });
+      return;
+    }
+    const rig = hit('data-rep-ignore');
+    if (rig) {
+      Z.SB.http('/rest/v1/reports?id=eq.' + rig.getAttribute('data-rep-ignore'), { method: 'PATCH', body: { status: 'done' } })
+        .then(function () { return Store.hydrate(); })
+        .then(function () { toast('已标记为已处理'); render(); })
+        .catch(function (e) { toast('操作失败：' + (e.message || '')); });
+      return;
+    }
+
     /* 资源审核 */
     const ra = hit('data-r-approve');
     if (ra) { Store.patch('resources', ra.getAttribute('data-r-approve'), { status: 'published' }); toast('已通过并公开'); render(); return; }
@@ -4637,8 +4705,8 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
         '<div class="field" style="margin-bottom:0"><div class="label">外部链接 <span class="small" style="color:var(--muted-2)">可选，填了就走外链下载</span></div>' +
           '<input class="input" id="upExternal" placeholder="https://…"></div>' +
         '<div class="banner" style="margin-top:6px">' + ic('shield') +
-          '<span>提交后状态为「待审核」。管理员通过前，只有你和管理员能看到这份资源。</span></div>',
-      foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="upSubmit">提交审核</button>',
+          '<span>发布后立刻出现在资源库。有人举报时，管理员会先下架再核实。</span></div>',
+      foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="upSubmit">发布</button>',
       onMount: (root) => {
         let fileName = '';
         root.querySelector('#upFile').addEventListener('change', function () {
@@ -4654,7 +4722,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
           Store.add('resources', {
             id: uid('r'), name: name, cat: root.querySelector('#upCat').value,
             authorId: me.id, version: root.querySelector('#upVer').value.trim() || '1.0',
-            desc: desc, date: now(), downloads: 0, likes: 0, status: 'pending',
+            desc: desc, date: now(), downloads: 0, likes: 0, status: 'published',
             license: license, external: root.querySelector('#upExternal').value.trim(),
             glyph: name.slice(0, 1), tone: Math.floor(Math.random() * 10),
             files: fileName ? [fileName] : [], bookmarkedBy: []
@@ -5052,6 +5120,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
           ? '<div class="v2-lock">下载前需要先 ' + need.join('、') + '。这是作者设定的条件。</div>' : '') +
         '<div class="v2-rule">' + ic('shield') +
           '<span>下载会绑定你的账号，图片带你的专属标记。私自转给别人，标记会指向你。</span></div>' +
+        (isMine ? '' : '<button class="rep-link" data-report="res" data-id="' + esc(String(r._db || r.id)) + '" data-label="' + esc(r.name) + '">匿名举报这份资源</button>') +
         '<div class="v3-cmt"><div class="v2-sec">评论（' + cmts.length + '）</div>' +
           (cmts.length ? cmts.map((p) => {
             const cu = Store.user(p.authorId) || { name: '成员' };
@@ -5211,7 +5280,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
     openModal({
       eyebrow: 'Submit Resource',
       title: '上传资源',
-      sub: '提交后进待审核；通过后才会出现在资源库。',
+      sub: '发布后立刻出现在资源库。被举报时管理员会先下架再处理。',
       body:
         '<div class="field"><div class="label">名称</div><input class="input" id="uName" placeholder="例如：旧纸 · 冬夜字卡"></div>' +
         '<div class="grid g2" style="gap:0 14px">' +
@@ -5233,7 +5302,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
             '<label class="opt ' + (i === 0 ? 'on' : '') + '" data-val="' + k + '"><input type="radio" name="uc">' + n + '</label>').join('') +
         '</div><div class="hint">条件由作者设定，系统会在下载前校验。</div></div>' +
         '<div class="banner">' + ic('shield') + '<span>文件会绑定下载者账号。同一份文件被别人二次上传，原作者会收到提示。</span></div>',
-      foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="uSend">提交审核</button>',
+      foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="uSend">发布</button>',
       onMount: (root) => {
         let coverUrl = '', coverFile = null, resFile = null;
         const cond = () => (root.querySelector('#uCond .opt.on') || { getAttribute: () => 'none' }).getAttribute('data-val');
@@ -5278,7 +5347,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
             const body = {
               name: name, category: root.querySelector('#uCat').value, author: m.id,
               version: root.querySelector('#uVer').value.trim() || '1.0',
-              summary: desc, status: 'pending', license: lic,
+              summary: desc, status: 'published', license: lic,
               files: resFile ? [{ n: resFile.name, u: fileUrl }] : [],
               cover: coverUrl || null,
               glyph: name.slice(0, 1), tone: 0,
@@ -5290,12 +5359,12 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
             if (repostOf) {
               try { await SB.http('/rest/v1/reposts', { method: 'POST', body: [{ resource_id: repostOf.id, owner: repostOf.author, uploader: m.id }] }); } catch (e) {}
               toast('已提交。注意：这份文件与《' + repostOf.name + '》完全一致，原作者会收到二次上传提示');
-            } else toast('已提交，等待审核');
+            } else toast('已发布');
             closeModal();
             try { await Store.hydrate(); } catch (e) {}
             rerender();
           } catch (e) {
-            btn.disabled = false; btn.textContent = '提交审核';
+            btn.disabled = false; btn.textContent = '发布';
             toast('提交失败：' + (e.message || '未知原因') + '（如提示字段不存在，请先跑升级 SQL）');
           }
         });
@@ -5374,6 +5443,52 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
       }
     });
   }
+
+
+  /* ---------- 匿名举报 ---------- */
+  const RP_WHY = ['抄袭搬运', '私下二传', '内容不适', '信息不实', '其他'];
+  function reportModal(kind, id, label) {
+    const m = me();
+    if (!m) return toast('请先登录再举报');
+    openModal({
+      eyebrow: 'Report',
+      title: '匿名举报',
+      sub: '只发给管理员。作者和被举报的人看不到是谁报的。',
+      body:
+        '<div class="field"><div class="label">举报对象</div>' +
+          '<div class="input" style="display:flex;align-items:center;color:var(--muted);pointer-events:none">' + esc(label) + '</div></div>' +
+        '<div class="field"><div class="label">理由</div>' +
+          '<div class="row gap-6 wrap" id="rpWhy">' + RP_WHY.map((w, i) =>
+            '<span class="chip rp-why' + (i === 0 ? ' active' : '') + '" data-rp-why="' + w + '">' + w + '</span>').join('') + '</div></div>' +
+        '<div class="field" style="margin-bottom:0"><div class="label">补充说明</div>' +
+          '<textarea class="textarea" id="rpNote" placeholder="发生了什么、在哪看到的，写清楚管理员才好判断。"></textarea></div>',
+      foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="rpSend">提交举报</button>',
+      onMount: (root) => {
+        let why = RP_WHY[0];
+        root.querySelectorAll('[data-rp-why]').forEach((el) => el.addEventListener('click', () => {
+          root.querySelectorAll('[data-rp-why]').forEach((x) => x.classList.remove('active'));
+          el.classList.add('active'); why = el.getAttribute('data-rp-why');
+        }));
+        root.querySelector('#rpSend').addEventListener('click', async () => {
+          const note = (root.querySelector('#rpNote').value || '').trim();
+          const btn = root.querySelector('#rpSend');
+          btn.disabled = true; btn.textContent = '提交中…';
+          try {
+            await SB.http('/rest/v1/reports', { method: 'POST', body: [{
+              kind: kind, target_id: String(id), target_label: label, reason: why, note: note, reporter: m.id
+            }] });
+            closeModal(); toast('已匿名提交，管理员会处理');
+            try { await Store.hydrate(); } catch (e) {}
+            rerender();
+          } catch (e) {
+            btn.disabled = false; btn.textContent = '提交举报';
+            toast('提交失败：' + (e.message || '表还没建，先跑举报表 SQL'));
+          }
+        });
+      }
+    });
+  }
+  ZV.reportOpen = reportModal;
 
   if (V2) V2.praiseModal = praiseModal2;
   window.ZV2 = { praiseModal: praiseModal2, openUpload: openUpload2, grab, like, rerender };
