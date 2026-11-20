@@ -1324,7 +1324,7 @@ body{background:#F1F1F3;font-size:13px;line-height:1.62;color:var(--ink);-webkit
 .zc-av{overflow:hidden!important;font-size:9px!important;letter-spacing:0!important;line-height:1!important}
 .zc-av{border:3px solid #fff!important}
 
-.modal input[type=file]{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+.modal input[type=file]{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:auto!important;overflow:hidden!important}
 
 #view .c-metrics .n, .c-metrics .n{font-family:var(--sans)!important;font-weight:600!important;font-size:30px!important;letter-spacing:-.03em!important}
 .atab{font-size:9.5px!important;padding:0 9px!important}
@@ -1416,6 +1416,10 @@ body{overscroll-behavior-y:none;}
 .pf-lb{font-size:9.5px;letter-spacing:.18em;color:var(--muted-2);text-transform:uppercase;margin-bottom:6px;}
 .pf-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:12px;}
 .pf-row i{font-style:normal;font-size:10px;color:var(--muted-2);}
+
+/* 追溯码 */
+.v2-trace{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.06em;color:var(--muted-2);background:var(--surface);border-radius:5px;padding:2px 6px;margin-left:auto;}
+.v2-file{gap:8px!important;}
 
 </style>
 </head>
@@ -5411,6 +5415,7 @@ body{overscroll-behavior-y:none;}
           line('版本', 'v' + esc(r.version)) +
           line('授权', esc(r.license || '作者未填写')) +
           line('文件', fs.length ? fs.length + ' 个 · ' + esc(fs[0].n) : '仅预览') +
+          line('下载', fs.length ? '资源包 · 带追溯码' : '—') +
         '</div>' +
         '<div class="v2-conds">' +
           (need.length ? need.map((n) => '<span class="chip acc-chip">先' + n + '</span>').join('') : '<span class="chip">条件已满足，可直接下载</span>') +
@@ -5462,7 +5467,9 @@ body{overscroll-behavior-y:none;}
           const html = '<div class="v2-sec" style="margin-top:18px">谁下载过（' + rows.length + '）</div>' +
             rows.map((x) => {
               const p = Store.user(x.user_id) || { name: '成员', id: x.user_id };
-              return '<div class="v2-file"><b>' + esc(p.name) + '</b><span>' + fmtDate(x.created_at) + '</span>' +
+              return '<div class="v2-file"><b>' + esc(p.name) + '</b>' +
+                '<span class="v2-trace">' + esc(x.trace || '无码') + '</span>' +
+                '<span>' + fmtDate(x.created_at) + '</span>' +
                 '<button class="v2-revoke" data-revoke="' + r.id + '" data-uid="' + x.user_id + '">收回</button></div>';
             }).join('');
           box.insertAdjacentHTML('afterend', html);
@@ -5475,16 +5482,19 @@ body{overscroll-behavior-y:none;}
      数据访问
      ============================================================ */
   async function loadDownloads(r) {
-    const rows = await SB.http('/rest/v1/downloads?select=user_id,created_at&resource_id=eq.' + dbId(r) + '&order=created_at.desc&limit=50');
+    const rows = await SB.http('/rest/v1/downloads?select=*&resource_id=eq.' + dbId(r) + '&order=created_at.desc&limit=50');
     return Array.isArray(rows) ? rows : [];
   }
   const dbId = (r) => (r._db || String(r.id).replace(/^r/, ''));
 
-  async function recordDownload(r) {
+  async function recordDownload(r, trace) {
     const m = me();
+    const base = { resource_id: Number(dbId(r)), user_id: m.id };
     try {
-      await SB.http('/rest/v1/downloads', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: [{ resource_id: Number(dbId(r)), user_id: m.id }] });
-    } catch (e) {}
+      await SB.http('/rest/v1/downloads', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: [trace ? Object.assign({}, base, { trace: trace }) : base] });
+    } catch (e) {
+      try { await SB.http('/rest/v1/downloads', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: [base] }); } catch (e2) {}
+    }
     try {
       await SB.http('/rest/v1/resources?id=eq.' + dbId(r), { method: 'PATCH', body: { downloads: (r.downloads || 0) + 1 } });
     } catch (e) {}
@@ -5510,9 +5520,105 @@ body{overscroll-behavior-y:none;}
     rerender();
   }
 
-  /* ---------- 下载（带专属标记） ---------- */
-  function stampText(m) {
-    return 'ZICORA · 仅供 ' + m.name + '（ID ' + String(m.id).slice(0, 6).toUpperCase() + '）自用 · ' + dstr(new Date().toISOString()) + ' · 请勿转传';
+  /* ---------- 下载（文件包 + 追溯码） ---------- */
+  function stampText(m, trace) {
+    return 'ZICORA · 仅供 ' + m.name + '（ID ' + String(m.id).slice(0, 6).toUpperCase() + '）自用 · 追溯码 ' + trace + ' · ' + dstr(new Date().toISOString()) + ' · 请勿转传';
+  }
+
+  function makeTrace(m) {
+    const seed = String((m && m.id) || '').replace(/-/g, '').slice(0, 4).toUpperCase() || 'ZC';
+    const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return 'ZC-' + seed + '-' + rnd;
+  }
+
+  /* 轻量 ZIP（存储方式，不压缩）：文件 + 追溯说明.txt */
+  function crc32(buf) {
+    let c, crc = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) {
+      c = (crc ^ buf[i]) & 0xFF;
+      for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1;
+      crc = (crc >>> 8) ^ c;
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function dosTime(d) {
+    return ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() / 2)) & 0xFFFF;
+  }
+  function dosDate(d) {
+    return (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+  }
+  function buildZip(entries) {
+    const enc = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    const dt = new Date(), tm = dosTime(dt), dd = dosDate(dt);
+    entries.forEach((e) => {
+      const name = enc.encode(e.name);
+      const data = e.data;
+      const crc = crc32(data);
+      const lh = new Uint8Array(30 + name.length);
+      const dv = new DataView(lh.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0x0800, true);
+      dv.setUint16(8, 0, true);
+      dv.setUint16(10, tm, true);
+      dv.setUint16(12, dd, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, name.length, true);
+      dv.setUint16(28, 0, true);
+      lh.set(name, 30);
+      parts.push(lh, data);
+      const ch = new Uint8Array(46 + name.length);
+      const cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, tm, true);
+      cv.setUint16(14, dd, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      ch.set(name, 46);
+      central.push(ch);
+      offset += lh.length + data.length;
+    });
+    const cdSize = central.reduce((n, c) => n + c.length, 0);
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, entries.length, true);
+    ev.setUint16(10, entries.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [eocd]), { type: 'application/zip' });
+  }
+
+  function saveBlob(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+
+  async function fetchEntry(f, i) {
+    const r = await fetch(f.u, { mode: 'cors' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const blob = await r.blob();
+    return { name: (f.n || ('文件' + (i + 1))).replace(/[\\/:*?"<>|]/g, '_'), data: new Uint8Array(await blob.arrayBuffer()) };
   }
 
   async function grab(r) {
@@ -5521,49 +5627,39 @@ body{overscroll-behavior-y:none;}
     if (await isRevoked(r)) return toast('作者已收回你对这份资源的使用权');
     const need = needList(r);
     if (need.length) { toast('先点个赞、留一句夸夸，才能下载'); return; }
-    const f = filesOf(r)[0];
-    await recordDownload(r);
-    if (!f || !f.u) {
-      if (r.external) { window.open(r.external, '_blank', 'noopener'); toast('正在打开下载页'); }
-      else toast('这份资源还没有上传文件，先联系作者补一下');
+
+    const trace = makeTrace(m);
+    const fs = filesOf(r).filter((f) => f.u);
+    await recordDownload(r, trace);
+
+    if (!fs.length) {
+      if (r.external) { window.open(r.external, '_blank', 'noopener'); toast('正在打开下载页 · 追溯码 ' + trace); }
+      else toast('这份资源还没有文件，追溯码 ' + trace + ' 已记录');
       return;
     }
-    const isImg = /\.(png|jpg|jpeg|webp|gif)$/i.test(f.u) || /\.(png|jpg|jpeg|webp|gif)$/i.test(f.n);
-    if (!isImg) {
-      window.open(f.u, '_blank', 'noopener');
-      toast('开始下载 · 已记录你的账号，转传会被作者看到');
-      return;
-    }
+
+    toast('正在打包 · 追溯码 ' + trace);
     try {
-      const blob = await (await fetch(f.u, { mode: 'cors' })).blob();
-      const bmp = await new Promise((res, rej) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => res(img);
-        img.onerror = rej;
-        img.src = URL.createObjectURL(blob);
-      });
-      const c = document.createElement('canvas');
-      c.width = bmp.width; c.height = bmp.height;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(bmp, 0, 0);
-      const fs = Math.max(12, Math.round(c.width / 52));
-      ctx.font = fs + 'px sans-serif';
-      const txt = stampText(m);
-      const tw = ctx.measureText(txt).width;
-      ctx.fillStyle = 'rgba(0,0,0,.55)';
-      ctx.fillRect(0, c.height - fs * 2.2, Math.min(c.width, tw + fs * 2), fs * 2.2);
-      ctx.fillStyle = '#fff';
-      ctx.fillText(txt, fs, c.height - fs * 0.7);
-      const out = await new Promise((res) => c.toBlob(res, 'image/png'));
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(out);
-      a.download = (f.n || 'zicora').replace(/\.(jpg|jpeg|webp|png)$/i, '') + '_' + String(m.id).slice(0, 6) + '.png';
-      a.click();
-      toast('已下载 · 图片右下角是你的专属标记');
+      const entries = [];
+      for (let i = 0; i < fs.length; i++) entries.push(await fetchEntry(fs[i], i));
+      const note = [
+        'ZICORA 资源包',
+        '资源：' + r.name + '（v' + (r.version || '1.0') + '）',
+        '作者：' + ((Store.user(r.authorId) || {}).name || '未知'),
+        '下载者：' + m.name + ' · ' + (m.id || ''),
+        '追溯码：' + trace,
+        '时间：' + new Date().toLocaleString('zh-CN'),
+        '说明：此包仅授权本人自用，请勿转传他人；文件外流时，作者可凭追溯码查到下载者。',
+      ].join('\r\n');
+      entries.push({ name: '追溯说明.txt', data: new TextEncoder().encode(note) });
+      const zip = buildZip(entries);
+      const base = (r.name || 'zicora').replace(/[\\/:*?"<>|]/g, '_');
+      saveBlob(zip, base + '__' + trace + '.zip');
+      toast('已下载 · 追溯码 ' + trace);
     } catch (e) {
+      const f = fs[0];
       window.open(f.u, '_blank', 'noopener');
-      toast('已打开原文件（这份格式没法加标记，但下载已记录在你名下）');
+      toast('打包失败，已打开原文件 · 追溯码 ' + trace + ' 已记录在你名下');
     }
   }
 
@@ -5608,6 +5704,10 @@ body{overscroll-behavior-y:none;}
       foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="uSend">发布</button>',
       onMount: (root) => {
         let coverUrl = '', coverFile = null, resFile = null;
+        Array.from(root.querySelectorAll('label.btn')).forEach((lb) => {
+          const inp = lb.querySelector('input[type=file]');
+          if (inp) lb.addEventListener('click', (e) => { e.preventDefault(); inp.click(); });
+        });
         const cond = () => (root.querySelector('#uCond .opt.on') || { getAttribute: () => 'none' }).getAttribute('data-val');
         root.querySelector('#uCover').addEventListener('change', async function () {
           coverFile = this.files[0] || null;
@@ -5631,7 +5731,6 @@ body{overscroll-behavior-y:none;}
           const desc = root.querySelector('#uDesc').value.trim();
           const lic = root.querySelector('#uLic').value.trim() || '可自用，请勿转传';
           if (!name || !desc) return toast('名称和介绍要写一下');
-          if (!resFile && !coverFile) return toast('至少传一个文件');
           const btn = root.querySelector('#uSend');
           btn.disabled = true; btn.textContent = '上传中…';
           try {
@@ -5794,7 +5893,7 @@ body{overscroll-behavior-y:none;}
   ZV.reportOpen = reportModal;
 
   if (V2) V2.praiseModal = praiseModal2;
-  window.ZV2 = { praiseModal: praiseModal2, openUpload: openUpload2, grab, like, rerender };
+  window.ZV2 = { praiseModal: praiseModal2, openUpload: openUpload2, grab, like, rerender, buildZip };
 
   /* ============================================================
      夸夸墙
