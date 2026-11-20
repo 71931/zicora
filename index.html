@@ -1393,6 +1393,30 @@ body{overscroll-behavior-y:none;}
   .modal-foot .btn--danger[style]{flex:0 0 44px!important;}
 }
 
+/* ============ 聊天全屏 ============ */
+#view.chat-mode{padding:0!important;overflow:hidden!important;display:flex!important;flex-direction:column;height:100%;}
+.chat-page{border-radius:0!important;box-shadow:none!important;margin:0!important;width:100%;}
+.chat-head{padding:10px 16px 8px!important;}
+.chat-body{padding:16px 16px 10px!important;}
+.chat-composer{padding:10px 14px calc(10px + env(safe-area-inset-bottom))!important;}
+.m-av{flex:0 0 auto;display:flex;cursor:pointer;}
+.msg{cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+.msg:active{opacity:.86;}
+
+/* 成员主页弹层 */
+.pf-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.pf-meta{min-width:0;}
+.pf-n{font-size:20px;font-weight:600;letter-spacing:-.02em;}
+.pf-r{font-size:11px;color:var(--muted-2);letter-spacing:.04em;margin-top:3px;}
+.pf-bio{font-size:12.5px;line-height:1.85;color:var(--muted);background:var(--surface);border-radius:12px;padding:12px 14px;}
+.pf-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 0;border-top:1px solid var(--line);padding-top:14px;}
+.pf-stats b{display:block;font-size:19px;font-weight:600;letter-spacing:-.02em;}
+.pf-stats span{font-size:10px;color:var(--muted-2);letter-spacing:.06em;}
+.pf-list{margin-top:16px;}
+.pf-lb{font-size:9.5px;letter-spacing:.18em;color:var(--muted-2);text-transform:uppercase;margin-bottom:6px;}
+.pf-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:12px;}
+.pf-row i{font-style:normal;font-size:10px;color:var(--muted-2);}
+
 </style>
 </head>
 <body>
@@ -2933,7 +2957,7 @@ body{overscroll-behavior-y:none;}
         '<div class="chat-guard">' + ic('lock') + '<span>公开频道 · 全站不设私聊</span></div>' +
       '</div>' +
       '<div class="chat-body" id="chatBody">' +
-        (msgs.length ? msgs.map((m) => msgRow(m, msgs, me)).join('')
+        (msgs.length ? msgs.map((m) => msgRow(m, msgs, me, chatCh)).join('')
           : '<div class="chat-empty"><div class="ce-line"></div><p>#' + esc(cur.name) + ' 还没有人说话。</p>' +
             '<span>第一句可以很短。</span></div>') +
         '<div class="small" style="text-align:center;color:var(--muted-2);font-size:10.5px;padding:6px 0">— 频道公开可见，发言请遵守社区公约 —</div>' +
@@ -2956,7 +2980,7 @@ body{overscroll-behavior-y:none;}
     '</div>';
   }
 
-  function msgRow(m, msgs, me) {
+  function msgRow(m, msgs, me, ch) {
     const u = Store.user(m.userId) || { name: '已离开的成员', color: 4, avatar: '?' };
     const quoted = m.replyTo ? msgs.find((x) => x.id === m.replyTo) : null;
     const qu = quoted ? Store.user(quoted.userId) : null;
@@ -2970,9 +2994,10 @@ body{overscroll-behavior-y:none;}
     } else {
       body = '<div class="m-text">' + esc(m.text) + '</div>';
     }
-    return '<div class="msg ' + (mine ? 'mine' : '') + '">' + avatar(u, 'sm') +
+    return '<div class="msg ' + (mine ? 'mine' : '') + '" data-mid="' + m.id + '" data-ch="' + esc(ch || '') + '" data-uid="' + esc(m.userId || '') + '">' +
+      '<span class="m-av" data-profile="' + esc(m.userId || '') + '">' + avatar(u, 'sm') + '</span>' +
       '<div class="m-body">' +
-        '<div class="m-top"><span class="m-name">' + esc(u.name) + '</span><span class="m-time">' + fmtTime(m.date) + '</span></div>' +
+        '<div class="m-top"><span class="m-name" data-profile="' + esc(m.userId || '') + '">' + esc(u.name) + '</span><span class="m-time">' + fmtTime(m.date) + '</span></div>' +
         (quoted ? '<div class="m-reply">' + (qu ? esc(qu.name) : '') + '：' + esc((quoted.text || '[附件]').slice(0, 26)) + '</div>' : '') +
         body +
         '<div class="m-actions"><span data-reply="' + m.id + '">回复</span></div>' +
@@ -3325,11 +3350,41 @@ body{overscroll-behavior-y:none;}
     '</div>';
   }
 
+  /* ============================================================
+     成员主页（点聊天头像 / 名字打开）
+     ============================================================ */
+  function profileModal(uidv) {
+    const u = Store.user(uidv);
+    if (!u) return toast('这个成员不在了');
+    const isMe = Store.me() && Store.me().id === u.id;
+    const roleName = u.role === 'super' ? '站长' : u.role === 'admin' ? '管理员' : u.role === 'owner' ? '站长' : '成员';
+    const pub = Store.data.resources.filter((r) => r.authorId === u.id && r.status === 'published');
+    const praises = Store.data.praise.filter((p) => p.authorId === u.id);
+    const days = u.joinedAt ? Math.max(1, Math.floor((Date.now() - new Date(u.joinedAt)) / 86400000) + 1) : 1;
+    openModal({
+      eyebrow: 'Member',
+      title: esc(u.name),
+      sub: roleName + (isMe ? ' · 这是你' : '') + ' · 已同行 ' + days + ' 天',
+      body:
+        '<div class="pf-head">' + avatar(u, 'lg') +
+          '<div class="pf-meta"><div class="pf-n">' + esc(u.name) + '</div>' +
+          '<div class="pf-r">' + roleName + (u.handle ? ' · @' + esc(u.handle) : '') + '</div></div></div>' +
+        '<div class="pf-bio">' + esc(u.bio || '还没写自我介绍。') + '</div>' +
+        '<div class="pf-stats"><div><b>' + pub.length + '</b><span>发布</span></div>' +
+          '<div><b>' + praises.length + '</b><span>夸夸</span></div>' +
+          '<div><b>' + (u.joinedAt ? fmtDate(u.joinedAt) : '—') + '</b><span>加入</span></div></div>' +
+        (pub.length ? '<div class="pf-list"><div class="pf-lb">TA 发布过</div>' +
+          pub.slice(0, 4).map((r) => '<div class="pf-row" data-res="' + r.id + '">' + esc(r.name) + '<i>' + esc(r.version ? 'v' + r.version : '') + '</i></div>').join('') + '</div>' : ''),
+      foot: '<button class="btn btn--ghost" data-close="1">关闭</button>'
+    });
+  }
+
   window.ZV2 = { viewBugs, viewChat, viewRepo, viewMe, viewAuth, viewSetup, viewPending, bugDetail, praiseModal, commentModal,
     getAuthMode: () => authMode, setAuthMode: (v) => { authMode = v; },
     getChatCh: () => chatCh, setChatCh: (v) => { chatCh = v; }, getChatReply: () => chatReply, setChatReply: (v) => { chatReply = v; },
     getBugDraft: () => bugDraft, setBugDraft: (v) => { bugDraft = Object.assign(bugDraft, v); },
-    getMeTab: () => meTab, setMeTab: (v) => { meTab = v; }, mePane, getRepoFilter: () => repoFilter, setRepoFilter: (v) => { repoFilter = v; }, readFile };
+    getMeTab: () => meTab, setMeTab: (v) => { meTab = v; }, mePane, getRepoFilter: () => repoFilter, setRepoFilter: (v) => { repoFilter = v; }, readFile,
+    profileModal: profileModal };
 })();
 
 
@@ -5032,6 +5087,83 @@ body{overscroll-behavior-y:none;}
       }
     });
   }
+
+  /* ---------- 聊天：长按撤回 / 点头像看主页 ---------- */
+  function msgById(ch, mid) {
+    return ((Store.data.chats[ch] || []).filter((x) => x.id === mid)[0]) || null;
+  }
+
+  function withdrawMsg(ch, mid) {
+    const arr = Store.data.chats[ch] || [];
+    const idx = arr.findIndex((x) => x.id === mid);
+    if (idx < 0) return;
+    const msg = arr[idx];
+    arr.splice(idx, 1);
+    if (msg._db) {
+      Z.SB.http('/rest/v1/chats?id=eq.' + msg._db, { method: 'DELETE' })
+        .catch(() => toast('已从本机撤回，云端失败，稍后再试'));
+    }
+    closeModal();
+    toast('已撤回');
+    render();
+  }
+
+  function openMsgMenu(el) {
+    const ch = el.getAttribute('data-ch');
+    const mid = el.getAttribute('data-mid');
+    const muid = el.getAttribute('data-uid');
+    const msg = msgById(ch, mid);
+    if (!msg) return;
+    const me = Store.me();
+    const mine = me && muid === me.id;
+    const canDel = mine || Store.isAdmin();
+    const u = Store.user(muid) || { name: '已离开的成员' };
+    openModal({
+      eyebrow: 'Message',
+      title: mine ? '这条消息' : esc(u.name) + ' 的消息',
+      sub: fmtDate(msg.date) + ' ' + fmtTime(msg.date) + (canDel ? '' : ' · 只有作者或管理员能撤回'),
+      body: '<div class="quote" style="margin:0">' + esc((msg.text || '[附件]').slice(0, 120)) + '</div>' +
+        '<div class="hint" style="margin-top:12px">' + (canDel ? '撤回后所有人都看不到了。' : '想举报可以点详情页底部匿名举报。') + '</div>',
+      foot: '<button class="btn btn--ghost" data-close="1">取消</button>' +
+        '<button class="btn btn--ghost" id="msgProfile">看主页</button>' +
+        (canDel ? '<button class="btn btn--danger" id="msgDel">撤回</button>' : ''),
+      onMount: (root) => {
+        const pb = root.querySelector('#msgProfile');
+        if (pb) pb.addEventListener('click', () => { closeModal(); V2.profileModal(muid); });
+        const db = root.querySelector('#msgDel');
+        if (db) db.addEventListener('click', () => withdrawMsg(ch, mid));
+      }
+    });
+  }
+
+  let lpTimer = null, lpStart = null, lpFired = false;
+  const clearLp = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+  document.addEventListener('pointerdown', function (ev) {
+    const el = ev.target && ev.target.closest ? ev.target.closest('.msg') : null;
+    if (!el || !el.getAttribute('data-mid')) return;
+    lpStart = { x: ev.clientX, y: ev.clientY };
+    lpFired = false;
+    clearLp();
+    lpTimer = setTimeout(() => { lpFired = true; openMsgMenu(el); }, 480);
+  }, { passive: true });
+  document.addEventListener('pointermove', function (ev) {
+    if (!lpStart) return;
+    if (Math.abs(ev.clientX - lpStart.x) > 10 || Math.abs(ev.clientY - lpStart.y) > 10) clearLp();
+  }, { passive: true });
+  ['pointerup', 'pointercancel'].forEach((n) => document.addEventListener(n, function () { clearLp(); lpStart = null; }, { passive: true }));
+  document.addEventListener('contextmenu', function (ev) {
+    const el = ev.target && ev.target.closest ? ev.target.closest('.msg') : null;
+    if (el && el.getAttribute('data-mid')) { ev.preventDefault(); openMsgMenu(el); }
+  });
+  document.addEventListener('click', function (ev) {
+    if (lpFired) { lpFired = false; ev.preventDefault(); ev.stopPropagation(); return; }
+    const pf = ev.target && ev.target.closest ? ev.target.closest('[data-profile]') : null;
+    if (pf) {
+      ev.preventDefault(); ev.stopPropagation();
+      const u = pf.getAttribute('data-profile');
+      if (u) V2.profileModal(u);
+    }
+  }, true);
 
   /* ---------- 更多入口 ---------- */
   function openDrawer() { ZV.openMenu(); }
