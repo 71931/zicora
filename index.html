@@ -1445,6 +1445,20 @@ body{overscroll-behavior-y:none;}
 .v2-opt .v2-opt-b{display:flex!important;flex-direction:column!important;gap:2px!important;}
 .v2-opt:has(input:checked){background:#fff!important;border-color:var(--ink)!important;}
 
+/* v5.6.2 授权 2×2 / 条件 1×3 紧凑排列 */
+.v2-opts--grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;}
+.v2-opts--row{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;}
+.v2-opts--grid .v2-opt{padding:9px 11px!important;border-radius:12px!important;}
+.v2-opts--grid .v2-opt b{font-size:11.5px!important;line-height:1.35!important;}
+.v2-opts--grid .v2-opt i{font-size:9.5px!important;}
+.v2-opts--row .v2-opt{padding:9px 6px!important;border-radius:11px!important;align-items:center!important;text-align:center!important;}
+.v2-opts--row .v2-opt b{font-size:10.5px!important;line-height:1.3!important;}
+.v2-opts--row .v2-opt i{font-size:9px!important;}
+@media (max-width:360px){
+  .v2-opts--grid{gap:6px!important;}
+  .v2-opts--row .v2-opt b{font-size:10px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -5267,10 +5281,10 @@ body{overscroll-behavior-y:none;}
 
   /* ---------- 资源状态 ---------- */
   const LIC_OPTS = [
-    { v: 'all', k: '全平台授权', d: '署名即可转载、二改、二传' },
-    { v: 'zicora', k: '仅限 Zicora 内使用', d: '站内自用，不得外传' },
-    { v: 'none', k: '不可二传二改', d: '只可自己用，禁止转发与修改' },
-    { v: 'private', k: '可私下二改', d: '自己改可以，不得二传' }
+    { v: 'all', k: '全平台授权', d: '可转载可二改' },
+    { v: 'zicora', k: '仅限站内使用', d: '不得外传' },
+    { v: 'none', k: '不可二传二改', d: '只能自己用' },
+    { v: 'private', k: '可私下二改', d: '不得二传' }
   ];
   function licLabel(k) { const o = LIC_OPTS.filter((x) => x.v === k)[0]; return o ? o.k : ''; }
   function filesOf(r) {
@@ -5736,7 +5750,7 @@ body{overscroll-behavior-y:none;}
         '</div>' +
         '<div class="field"><div class="label">介绍</div><textarea class="textarea" id="uDesc" placeholder="它是什么，适合什么场景，有什么细节值得注意"></textarea></div>' +
         '<div class="field"><div class="label">授权 <span class="req">*</span><span class="hint" style="display:inline">（必须选一项）</span></div>' +
-          '<div class="v2-opts" id="uLicBox">' +
+          '<div class="v2-opts v2-opts--grid" id="uLicBox">' +
             LIC_OPTS.map((o, i) => '<label class="v2-opt' + (i === 0 ? ' on' : '') + '"><input type="radio" name="uLicRadio" value="' + o.v + '"' + (i === 0 ? ' checked' : '') + '><span class="v2-opt-b"><b>' + o.k + '</b><i>' + o.d + '</i></span></label>').join('') +
           '</div>' +
           '<input class="input" id="uLicNote" placeholder="补充说明（可选）：例如署名方式、联系方式"></div>' +
@@ -5749,10 +5763,10 @@ body{overscroll-behavior-y:none;}
           '<span class="small" id="uFileName" style="font-size:11.5px">未选择</span></div>' +
           '<div class="hint">可以是一个人打包的多个文件；下载时系统会统一打成资源包发给对方。</div></div>' +
         '<div class="field"><div class="label">下载条件 <span class="hint" style="display:inline">（你选，别人必须做到才能下载）</span></div>' +
-          '<div class="v2-opts" id="uCondBox">' +
-            '<label class="v2-opt on"><input type="radio" name="uCondRadio" value="1|1" checked><span class="v2-opt-b"><b>点赞 + 评论</b><i>最严，两个都要</i></span></label>' +
-            '<label class="v2-opt"><input type="radio" name="uCondRadio" value="1|0"><span class="v2-opt-b"><b>只需点赞</b><i>点个赞就能下</i></span></label>' +
-            '<label class="v2-opt"><input type="radio" name="uCondRadio" value="0|1"><span class="v2-opt-b"><b>只需评论</b><i>留一句话就能下</i></span></label>' +
+          '<div class="v2-opts v2-opts--row" id="uCondBox">' +
+            '<label class="v2-opt on"><input type="radio" name="uCondRadio" value="1|1" checked><span class="v2-opt-b"><b>点赞 + 评论</b><i>两个都要</i></span></label>' +
+            '<label class="v2-opt"><input type="radio" name="uCondRadio" value="1|0"><span class="v2-opt-b"><b>只需点赞</b><i>点个赞就行</i></span></label>' +
+            '<label class="v2-opt"><input type="radio" name="uCondRadio" value="0|1"><span class="v2-opt-b"><b>只需评论</b><i>留句话就行</i></span></label>' +
           '</div>' +
           '<div class="hint">评论是留言说一句，不是打星。条件会写在资源详情里，对方能看到还差哪一步。</div></div>' +
         '<div class="banner">' + ic('shield') + '<span>文件会绑定下载者账号。同一份文件被别人二次上传，原作者会收到提示。</span></div>',
