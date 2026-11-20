@@ -1421,6 +1421,30 @@ body{overscroll-behavior-y:none;}
 .v2-trace{font-family:ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.06em;color:var(--muted-2);background:var(--surface);border-radius:5px;padding:2px 6px;margin-left:auto;}
 .v2-file{gap:8px!important;}
 
+/* ---------- v5.6 上传：文件选择器直接覆盖按钮（手机端必须原生可点） ---------- */
+.filebtn{position:relative!important;overflow:hidden!important;cursor:pointer!important;}
+.filebtn input[type=file].filehit{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:100%!important;min-height:100%!important;opacity:0!important;display:block!important;margin:0!important;padding:0!important;border:0!important;cursor:pointer!important;pointer-events:auto!important;z-index:6!important;font-size:16px!important;-webkit-appearance:none!important;appearance:none!important;}
+
+/* 授权 / 下载条件：单选卡 */
+.v2-opts{display:flex;flex-direction:column;gap:8px;margin:2px 0 10px;}
+.v2-opt{display:flex;flex-direction:column;gap:2px;padding:11px 13px;border-radius:14px;background:var(--paper-2);border:1px solid transparent;cursor:pointer;transition:background .15s ease,border-color .15s ease;}
+.v2-opt b{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;}
+.v2-opt i{font-style:normal;font-size:10.5px;color:var(--muted-2);line-height:1.5;}
+.v2-opt.on{background:#fff;border-color:var(--ink);}
+.v2-opt.on b{color:var(--ink);}
+.v2-opt:active{transform:scale(.995);}
+@media (max-width:400px){
+  .v2-opt{padding:10px 12px;border-radius:12px;}
+  .v2-opt b{font-size:12px;}
+  .v2-opt i{font-size:10px;}
+}
+
+/* v5.6.1 radio 版授权/条件卡 */
+.v2-opt{position:relative!important;}
+.v2-opt input{position:absolute!important;left:0!important;top:0!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;}
+.v2-opt .v2-opt-b{display:flex!important;flex-direction:column!important;gap:2px!important;}
+.v2-opt:has(input:checked){background:#fff!important;border-color:var(--ink)!important;}
+
 </style>
 </head>
 <body>
@@ -1654,6 +1678,7 @@ body{overscroll-behavior-y:none;}
   function profileRow(u) {
     return { name: u.name, handle: u.handle || null, role: u.role, bio: u.bio || '', avatar: (u.avatarImg || u.avatar || null), color: u.color || 0, banned: !!u.banned, apply_reason: u.applyReason || '' };
   }
+  function hasCond(r) { return r.need_like !== undefined && r.need_like !== null || r.need_comment !== undefined && r.need_comment !== null; }
   function resourceFrom(r, likes, books) {
     return {
       _db: r.id, id: 'r' + r.id, name: r.name, cat: r.category, authorId: r.author,
@@ -1661,7 +1686,7 @@ body{overscroll-behavior-y:none;}
       downloads: r.downloads || 0, likes: likes || 0, status: r.status,
       license: r.license || '', external: r.external_url || '', glyph: r.glyph || '',
       tone: r.tone || 0, files: Array.isArray(r.files) ? r.files : [],
-      cover: r.cover || '', needLike: r.need_like === false ? false : true, needComment: r.need_comment === false ? false : true, hash: r.hash || '',
+      cover: r.cover || '', needLike: !hasCond(r) || r.need_like === true, needComment: !hasCond(r) || r.need_comment === true, hash: r.hash || '',
       bookmarkedBy: books || [], reviewNote: r.review_note || '', likedBy: []
     };
   }
@@ -2366,7 +2391,7 @@ body{overscroll-behavior-y:none;}
   };
 
   window.Z = {
-    Store: Store, SB: { url: SB_URL, key: SB_KEY, http: http, rpc: rpc },
+    Store: Store, SB: { url: SB_URL, key: SB_KEY, http: http, rpc: rpc, uid: function () { return (session && session.user && session.user.id) || ''; }, token: function () { return (session && session.access_token) || ''; } },
     CATS, CAT_MAP, DEVICES, MODES, BROWSERS, BUG_STATUS, BUG_MAP,
     catsAll, catAdd, catDel,
     utils: { uid, now, esc, fmtDate, fmtTime, relTime, digest }
@@ -5241,6 +5266,13 @@ body{overscroll-behavior-y:none;}
   }
 
   /* ---------- 资源状态 ---------- */
+  const LIC_OPTS = [
+    { v: 'all', k: '全平台授权', d: '署名即可转载、二改、二传' },
+    { v: 'zicora', k: '仅限 Zicora 内使用', d: '站内自用，不得外传' },
+    { v: 'none', k: '不可二传二改', d: '只可自己用，禁止转发与修改' },
+    { v: 'private', k: '可私下二改', d: '自己改可以，不得二传' }
+  ];
+  function licLabel(k) { const o = LIC_OPTS.filter((x) => x.v === k)[0]; return o ? o.k : ''; }
   function filesOf(r) {
     return (r.files || []).map((f) => (typeof f === 'string' ? { n: f, u: '' } : { n: f.n || '文件', u: f.u || '' }));
   }
@@ -5252,11 +5284,18 @@ body{overscroll-behavior-y:none;}
   }
   function needList(r) {
     const m = me();
-    if (!m) return ['登录', '点赞', '夸一句'];
     const out = [];
-    if (!liked(r)) out.push('点赞');
-    if (!praised(r)) out.push('夸一句');
+    if (!m) out.push('登录');
+    if (r.needLike !== false && !liked(r)) out.push('点赞');
+    if (r.needComment !== false && !praised(r)) out.push('评论');
     return out;
+  }
+  function condText(r) {
+    const l = r.needLike !== false, c = r.needComment !== false;
+    if (l && c) return '点赞 + 评论';
+    if (l) return '点赞';
+    if (c) return '评论';
+    return '无需条件';
   }
 
   /* ---------- 通用小块 ---------- */
@@ -5414,6 +5453,7 @@ body{overscroll-behavior-y:none;}
           line('分类', catName(r.cat)) +
           line('版本', 'v' + esc(r.version)) +
           line('授权', esc(r.license || '作者未填写')) +
+          line('下载条件', condText(r)) +
           line('文件', fs.length ? fs.length + ' 个 · ' + esc(fs[0].n) : '仅预览') +
           line('下载', fs.length ? '资源包 · 带追溯码' : '—') +
         '</div>' +
@@ -5626,7 +5666,7 @@ body{overscroll-behavior-y:none;}
     if (!m) return toast('请先登录');
     if (await isRevoked(r)) return toast('作者已收回你对这份资源的使用权');
     const need = needList(r);
-    if (need.length) { toast('先点个赞、留一句夸夸，才能下载'); return; }
+    if (need.length) { toast('还差一步：' + need.join('、')); return; }
 
     const trace = makeTrace(m);
     const fs = filesOf(r).filter((f) => f.u);
@@ -5648,8 +5688,14 @@ body{overscroll-behavior-y:none;}
         '作者：' + ((Store.user(r.authorId) || {}).name || '未知'),
         '下载者：' + m.name + ' · ' + (m.id || ''),
         '追溯码：' + trace,
+        '授权：' + (r.license || '作者未填写'),
         '时间：' + new Date().toLocaleString('zh-CN'),
-        '说明：此包仅授权本人自用，请勿转传他人；文件外流时，作者可凭追溯码查到下载者。',
+        '',
+        '授权约定（由作者在上传时选择）：',
+        '  ' + (r.license || '未填写'),
+        '',
+        '说明：本包只授权下载者本人使用。若你并非下载者本人，请删除，并告知作者。',
+        '外流时作者可凭上面这串追溯码，在站内查到下载者账号与下载时间，站点会按授权约定处理。',
       ].join('\r\n');
       entries.push({ name: '追溯说明.txt', data: new TextEncoder().encode(note) });
       const zip = buildZip(entries);
@@ -5689,26 +5735,44 @@ body{overscroll-behavior-y:none;}
           '<div class="field"><div class="label">版本</div><input class="input" id="uVer" placeholder="1.0"></div>' +
         '</div>' +
         '<div class="field"><div class="label">介绍</div><textarea class="textarea" id="uDesc" placeholder="它是什么，适合什么场景，有什么细节值得注意"></textarea></div>' +
-        '<div class="field"><div class="label">授权</div><input class="input" id="uLic" placeholder="例如：可自用，请勿转传与二次售卖"></div>' +
+        '<div class="field"><div class="label">授权 <span class="req">*</span><span class="hint" style="display:inline">（必须选一项）</span></div>' +
+          '<div class="v2-opts" id="uLicBox">' +
+            LIC_OPTS.map((o, i) => '<label class="v2-opt' + (i === 0 ? ' on' : '') + '"><input type="radio" name="uLicRadio" value="' + o.v + '"' + (i === 0 ? ' checked' : '') + '><span class="v2-opt-b"><b>' + o.k + '</b><i>' + o.d + '</i></span></label>').join('') +
+          '</div>' +
+          '<input class="input" id="uLicNote" placeholder="补充说明（可选）：例如署名方式、联系方式"></div>' +
         '<div class="field"><div class="label">预览图 <span class="hint" style="display:inline">（资源库里的封面，没有就留空）</span></div>' +
-          '<div class="row gap-12"><label class="btn btn--ghost btn--sm" style="cursor:pointer">' + ic('image') + ' 选图片<input type="file" id="uCover" accept="image/*" style="display:none"></label>' +
+          '<div class="row gap-12"><label class="btn btn--ghost btn--sm filebtn">' + ic('image') + ' 选图片<input type="file" class="filehit" id="uCover" accept="image/*"></label>' +
           '<span class="small" id="uCoverName" style="font-size:11.5px">未选择</span></div>' +
           '<div class="v2-upcover" id="uCoverPrev"></div></div>' +
         '<div class="field"><div class="label">资源文件</div>' +
-          '<div class="row gap-12"><label class="btn btn--ghost btn--sm" style="cursor:pointer">' + ic('clip') + ' 选文件<input type="file" id="uFile" style="display:none"></label>' +
-          '<span class="small" id="uFileName" style="font-size:11.5px">未选择</span></div></div>' +
-        '<div class="field"><div class="label">下载条件</div>' +
-          '<div class="v2-conds"><span class="chip acc-chip">点赞</span><span class="chip acc-chip">夸一句</span></div>' +
-          '<div class="hint">全站统一：下载前需要点赞并留一句夸夸，作者不用逐份设置。</div></div>' +
+          '<div class="row gap-12"><label class="btn btn--ghost btn--sm filebtn">' + ic('clip') + ' 选文件<input type="file" class="filehit" id="uFile"></label>' +
+          '<span class="small" id="uFileName" style="font-size:11.5px">未选择</span></div>' +
+          '<div class="hint">可以是一个人打包的多个文件；下载时系统会统一打成资源包发给对方。</div></div>' +
+        '<div class="field"><div class="label">下载条件 <span class="hint" style="display:inline">（你选，别人必须做到才能下载）</span></div>' +
+          '<div class="v2-opts" id="uCondBox">' +
+            '<label class="v2-opt on"><input type="radio" name="uCondRadio" value="1|1" checked><span class="v2-opt-b"><b>点赞 + 评论</b><i>最严，两个都要</i></span></label>' +
+            '<label class="v2-opt"><input type="radio" name="uCondRadio" value="1|0"><span class="v2-opt-b"><b>只需点赞</b><i>点个赞就能下</i></span></label>' +
+            '<label class="v2-opt"><input type="radio" name="uCondRadio" value="0|1"><span class="v2-opt-b"><b>只需评论</b><i>留一句话就能下</i></span></label>' +
+          '</div>' +
+          '<div class="hint">评论是留言说一句，不是打星。条件会写在资源详情里，对方能看到还差哪一步。</div></div>' +
         '<div class="banner">' + ic('shield') + '<span>文件会绑定下载者账号。同一份文件被别人二次上传，原作者会收到提示。</span></div>',
       foot: '<button class="btn btn--ghost" data-close="1">取消</button><button class="btn btn--ink" id="uSend">发布</button>',
       onMount: (root) => {
         let coverUrl = '', coverFile = null, resFile = null;
-        Array.from(root.querySelectorAll('label.btn')).forEach((lb) => {
-          const inp = lb.querySelector('input[type=file]');
-          if (inp) lb.addEventListener('click', (e) => { e.preventDefault(); inp.click(); });
+        const licBox = root.querySelector('#uLicBox');
+        const condBox = root.querySelector('#uCondBox');
+        const sync = (box) => Array.from(box.querySelectorAll('.v2-opt')).forEach((el) => {
+          const inp = el.querySelector('input');
+          el.classList.toggle('on', !!(inp && inp.checked));
         });
-        const cond = () => (root.querySelector('#uCond .opt.on') || { getAttribute: () => 'none' }).getAttribute('data-val');
+        [licBox, condBox].forEach((box) => {
+          Array.from(box.querySelectorAll('input')).forEach((inp) => inp.addEventListener('change', () => sync(box)));
+        });
+        const cond = () => {
+          const inp = condBox.querySelector('input:checked') || condBox.querySelector('input');
+          const parts = String(inp ? inp.value : '1|1').split('|');
+          return { l: parts[0] === '1', c: parts[1] === '1' };
+        };
         root.querySelector('#uCover').addEventListener('change', async function () {
           coverFile = this.files[0] || null;
           root.querySelector('#uCoverName').textContent = coverFile ? coverFile.name : '未选择';
@@ -5723,14 +5787,18 @@ body{overscroll-behavior-y:none;}
           }
         });
         root.querySelector('#uFile').addEventListener('change', function () {
-          resFile = this.files[0] || null;
+          resFile = this.files?.[0] || null;
           root.querySelector('#uFileName').textContent = resFile ? resFile.name : '未选择';
         });
         root.querySelector('#uSend').addEventListener('click', async () => {
           const name = root.querySelector('#uName').value.trim();
           const desc = root.querySelector('#uDesc').value.trim();
-          const lic = root.querySelector('#uLic').value.trim() || '可自用，请勿转传';
+          const on = licBox.querySelector('input:checked');
           if (!name || !desc) return toast('名称和介绍要写一下');
+          if (!on) return toast('授权必须选一项，选好再发布');
+          const note = root.querySelector('#uLicNote').value.trim();
+          const lic = licLabel(on.value) + (note ? ' · ' + note : '');
+          const c = cond();
           const btn = root.querySelector('#uSend');
           btn.disabled = true; btn.textContent = '上传中…';
           try {
@@ -5753,21 +5821,33 @@ body{overscroll-behavior-y:none;}
               files: resFile ? [{ n: resFile.name, u: fileUrl }] : [],
               cover: coverUrl || null,
               glyph: name.slice(0, 1), tone: 0,
-              need_like: true,
-              need_comment: true,
+              need_like: c.l,
+              need_comment: c.c,
               hash: hash || null
             };
-            await SB.http('/rest/v1/resources', { method: 'POST', body: [body] });
+            let posted = false;
+            try {
+              await SB.http('/rest/v1/resources', { method: 'POST', body: [body] });
+              posted = true;
+            } catch (err1) {
+              const msg = (err1 && err1.message) || '';
+              if (!/row-level security|42501|permission/i.test(msg)) throw err1;
+              const uid = SB.uid();
+              if (!uid) throw err1;
+              await SB.http('/rest/v1/resources', { method: 'POST', body: [Object.assign({}, body, { author: uid })] });
+              posted = true;
+            }
+            if (!posted) throw new Error('发布失败');
             if (repostOf) {
               try { await SB.http('/rest/v1/reposts', { method: 'POST', body: [{ resource_id: repostOf.id, owner: repostOf.author, uploader: m.id }] }); } catch (e) {}
-              toast('已提交。注意：这份文件与《' + repostOf.name + '》完全一致，原作者会收到二次上传提示');
+              toast('已发布。注意：这份文件与《' + repostOf.name + '》完全一致，原作者会收到二次上传提示');
             } else toast('已发布');
             closeModal();
             try { await Store.hydrate(); } catch (e) {}
             rerender();
           } catch (e) {
             btn.disabled = false; btn.textContent = '发布';
-            toast('提交失败：' + (e.message || '未知原因') + '（如提示字段不存在，请先跑升级 SQL）');
+            toast('发布失败：' + (e.message || '未知原因'));
           }
         });
       }
