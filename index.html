@@ -2932,7 +2932,7 @@ body{overscroll-behavior-y:none;}
             '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">' +
             '<span data-rm-attach="' + i + '" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(35,32,25,.75);color:#fff;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer">×</span></div>').join('') +
         '</div>' +
-        '<label class="btn btn--ghost btn--sm" style="align-self:flex-start;cursor:pointer">' + ic('image') + ' 选择文件<input type="file" id="bFile" accept="image/*,video/*" multiple style="display:none"></label>' +
+        '<label class="btn btn--ghost btn--sm filebtn" style="align-self:flex-start">' + ic('image') + ' 选择文件<input type="file" class="filehit" id="bFile" accept="image/*,video/*" multiple></label>' +
       '</div>' +
     '</div>' +
 
@@ -2997,8 +2997,8 @@ body{overscroll-behavior-y:none;}
           '<span data-cancel-reply="1" style="cursor:pointer;color:var(--gold-deep);flex:0 0 auto;padding-left:8px">取消</span></div>' : '') +
         '<div class="composer-tools">' +
           '<button class="tool-btn" data-emoji-toggle="1" title="表情">' + ic('smile') + '</button>' +
-          '<label class="tool-btn" title="图片" style="cursor:pointer">' + ic('image') + '<input type="file" id="chImg" accept="image/*" style="display:none"></label>' +
-          '<label class="tool-btn" title="文件" style="cursor:pointer">' + ic('clip') + '<input type="file" id="chFile" style="display:none"></label>' +
+          '<label class="tool-btn filebtn" title="图片">' + ic('image') + '<input type="file" class="filehit" id="chImg" accept="image/*"></label>' +
+          '<label class="tool-btn filebtn" title="文件">' + ic('clip') + '<input type="file" class="filehit" id="chFile"></label>' +
         '</div>' +
         '<div class="emoji-bar" id="emojiBar" style="display:none">' + ['🙂', '🍃', '✨', '📎', '🌙', '☕️', '🤍', '🪶', '📖', '🕯', '🌾', '🫧'].map((e) => '<span data-emoji="' + e + '">' + e + '</span>').join('') + '</div>' +
         '<div class="composer-row">' +
@@ -4948,7 +4948,7 @@ body{overscroll-behavior-y:none;}
         '<div class="field"><div class="label">资源介绍 <span class="req">*</span></div>' +
           '<textarea class="textarea" id="upDesc" placeholder="它是什么、适合什么场景、有什么细节值得注意"></textarea></div>' +
         '<div class="field"><div class="label">资源文件</div>' +
-          '<div class="row gap-12"><label class="btn btn--ghost btn--sm" style="cursor:pointer">' + ic('clip') + ' 选择文件<input type="file" id="upFile" style="display:none"></label>' +
+          '<div class="row gap-12"><label class="btn btn--ghost btn--sm filebtn">' + ic('clip') + ' 选择文件<input type="file" class="filehit" id="upFile"></label>' +
           '<span class="small" id="upFileName" style="font-size:11.5px">未选择文件</span></div>' +
           '<div class="hint">支持 zip / txt / ztheme / apk 等，单个不超过 50MB。</div></div>' +
         '<div class="field" style="margin-bottom:0"><div class="label">外部链接 <span class="small" style="color:var(--muted-2)">可选，填了就走外链下载</span></div>' +
