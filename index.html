@@ -1466,6 +1466,19 @@ body{overscroll-behavior-y:none;}
   .gate .input{height:48px!important;}
 }
 
+/* v5.8 密码小眼睛 / 强度规则 / QQ 一致性提示 */
+.pw-wrap{position:relative!important;}
+.pw-wrap .input{padding-right:48px!important;}
+.pw-eye{position:absolute!important;right:4px!important;top:50%!important;transform:translateY(-50%)!important;width:38px!important;height:38px!important;border:0!important;background:transparent!important;color:var(--muted-2)!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:50%!important;padding:0!important;cursor:pointer!important;}
+.pw-eye.on{color:var(--ink)!important;}
+.pw-eye .eye-slash{opacity:.55;}
+.pw-eye.on .eye-slash{opacity:0;}
+.pw-rules{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-top:8px!important;}
+.pw-rule{font-size:10px!important;line-height:1.4!important;color:var(--muted-2)!important;background:var(--paper-2)!important;border-radius:999px!important;padding:3px 9px!important;transition:background .15s ease,color .15s ease!important;}
+.pw-rule.ok{color:#3C6B4F!important;background:#EDF3EE!important;}
+.g-warn{margin-top:14px;background:#FBF2E6;border:1px solid #EEDCC3;color:#7A5A2E;border-radius:12px;padding:11px 13px;font-size:11.5px;line-height:1.7;}
+@media (max-width:400px){.pw-rule{font-size:9.5px!important;}}
+
 </style>
 </head>
 <body>
@@ -3485,12 +3498,32 @@ body{overscroll-behavior-y:none;}
   let userMode = 'apply';
   function setUserMode(m) { userMode = m; }
 
+  const PW_RULES = [
+    { k: 'len', t: '至少 10 个字符' },
+    { k: 'upper', t: '包含大写字母' },
+    { k: 'lower', t: '包含小写字母' },
+    { k: 'digit', t: '包含数字' }
+  ];
+  function pwRules(check, id) {
+    const c = check || {};
+    return '<div class="pw-rules"' + (id ? ' id="' + id + 'Rules"' : '') + '>' + PW_RULES.map((r) =>
+      '<span class="pw-rule' + (c[r.k] ? ' ok' : '') + '" data-rule="' + r.k + '">' + r.t + '</span>').join('') + '</div>';
+  }
+  const EYE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.6-6.4 10-6.4S22 12 22 12s-3.6 6.4-10 6.4S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6"/><path class="eye-slash" d="M4 20 20 4" stroke-width="1.8"/></svg>';
+  function pwBlock(id, label, placeholder) {
+    return '<div class="field"><div class="label">' + label + '</div>' +
+      '<div class="pw-wrap"><input class="input" id="' + id + '" type="password" placeholder="' + placeholder + '" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="new-password">' +
+      '<button type="button" class="pw-eye" data-eye="' + id + '" aria-label="显示密码">' + EYE + '</button></div>' +
+      pwRules({}, id) + '</div>';
+  }
+
   function loginForm() {
     const mail = (Store.lastEmail && Store.lastEmail()) || '';
     return '<div class="field"><div class="label">邮箱</div>' +
         '<input class="input" id="enEmail" type="email" inputmode="email" value="' + esc(mail) + '" placeholder="you@example.com" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
       '<div class="field"><div class="label">密码</div>' +
-        '<input class="input" id="enPw" type="password" placeholder="输入密码" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+        '<div class="pw-wrap"><input class="input" id="enPw" type="password" placeholder="输入密码" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false">' +
+        '<button type="button" class="pw-eye" data-eye="enPw" aria-label="显示密码">' + EYE + '</button></div>' +
       '<div class="err" id="enErr"></div>' +
       '<button class="btn btn--ink btn-block" id="enSubmit" style="height:46px">登录</button>' +
       '<p class="hint" style="text-align:center;margin-top:10px">这台设备会记住登录状态，下次打开直接进来。</p>';
@@ -3501,9 +3534,11 @@ body{overscroll-behavior-y:none;}
       '<div class="field"><div class="label">邮箱 <span class="req">*</span></div>' +
         '<input class="input" id="spEmail" placeholder="you@example.com" autocomplete="off"></div>' +
       '<div class="field"><div class="label">密码 <span class="req">*</span></div>' +
-        '<input class="input" id="spPass" type="password" placeholder="至少 8 位"></div>' +
+        '<div class="pw-wrap"><input class="input" id="spPass" type="password" placeholder="至少 10 位，含大小写和数字" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="new-password">' +
+        '<button type="button" class="pw-eye" data-eye="spPass" aria-label="显示密码">' + EYE + '</button></div>' +
+        pwRules({}, 'spPass') + '</div>' +
       '<div class="field"><div class="label">再输一次 <span class="req">*</span></div>' +
-        '<input class="input" id="spPass2" type="password" placeholder="确认密码"></div>' +
+        '<input class="input" id="spPass2" type="password" placeholder="确认密码" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
       '<div class="err" id="spErr"></div>' +
       '<button class="btn btn--ink btn-block" id="spSubmit" style="height:46px">创建超级管理员并进入</button>'
       ;
@@ -3521,17 +3556,21 @@ body{overscroll-behavior-y:none;}
     return '<div class="field"><div class="label">昵称 <span class="req">*</span></div>' +
         '<input class="input" id="apName" placeholder="你想被怎么称呼"></div>' +
       '<div class="field"><div class="label">邮箱 <span class="req">*</span></div>' +
-        '<input class="input" id="apEmail" placeholder="you@example.com" autocomplete="off"></div>' +
-      '<div class="field"><div class="label">密码 <span class="req">*</span></div>' +
-        '<input class="input" id="apPw" type="password" placeholder="至少 8 位"></div>' +
+        '<input class="input" id="apEmail" type="email" inputmode="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+      '<div class="field"><div class="label">QQ 号 <span class="req">*</span></div>' +
+        '<input class="input mono-num" id="apQqNum" inputmode="numeric" placeholder="填你截图里的那个 QQ 号" autocomplete="off" style="letter-spacing:.06em">' +
+        '<div class="hint">这个号必须和下面每张截图里的 QQ 号完全一致，不一致会直接驳回。</div></div>' +
+      pwBlock('apPw', '密码 <span class="req">*</span>', '至少 10 位，含大小写和数字') +
       '<div class="field"><div class="label">申请理由 <span class="req">*</span></div>' +
         '<textarea class="textarea" id="apReason" placeholder="一两句话说清楚你是谁、想在这里做什么；只写「求进」「水一下」不会通过。" style="min-height:88px"></textarea></div>' +
 
       '<div class="pane-head" style="margin-top:22px"><div><span class="s">Proof</span><h2 class="h2" style="font-size:14px">四张截图</h2></div></div>' +
-      upBlock('apAge', '① 年龄截图（支付宝或小红书）', '要能看清出生日期，或「已满 16 岁」那一行。未满 16 岁不会通过。') +
-      upBlock('apXhs', '② 小红书账号截图', '个人主页，能看到小红书号。') +
-      upBlock('apQq', '③ QQ 号截图', '个人资料页，能看到 QQ 号。') +
-      upBlock('apFollow', '④ 我的关注截图', '关注列表，用来看你平时在看什么。') +
+      upBlock('apXhs', '① 小红书主页（含小红书号 + QQ 号）', '一张截图里同时能看到你的小红书号，和你的 QQ 号。') +
+      upBlock('apFollow', '②「关注我的」界面', '点开「关注」，截能看到关注列表的整页。') +
+      upBlock('apAge', '③ 支付宝个人信息（16+ · 女 + QQ 号）', '要能看清实名信息、年龄，并带上你的 QQ 号；未满 16 岁或性别不符不会通过。') +
+      upBlock('apQq', '④ QQ 个人资料页（号码必须一致）', '显示 QQ 号的那一页，用来核对上面三张里的号是不是同一个。') +
+
+      '<div class="g-warn">' + '两种 QQ 号必须统一：①③④ 里的 QQ 号，和你填的 QQ 号，必须完全一样。' + '</div>' +
 
       '<div class="err" id="apErr"></div>' +
       '<button class="btn btn--ink btn-block" id="apSubmit" style="height:46px;margin-top:8px">注册并提交申请</button>' +
@@ -3595,8 +3634,35 @@ body{overscroll-behavior-y:none;}
     '</div>';
   }
 
+  function pwCheck(v) {
+    return { len: v.length >= 10, upper: /[A-Z]/.test(v), lower: /[a-z]/.test(v), digit: /[0-9]/.test(v) };
+  }
+  function paintRules(id, v) {
+    const box = document.getElementById(id + 'Rules');
+    if (!box) return;
+    const c = pwCheck(v || '');
+    box.querySelectorAll('.pw-rule').forEach((el) => el.classList.toggle('ok', !!c[el.getAttribute('data-rule')]));
+  }
   function bindChanges() {
+    if (bindChanges._done) return;
+    bindChanges._done = true;
     const names = { apAge: 'apAgeName', apXhs: 'apXhsName', apQq: 'apQqName', apFollow: 'apFollowName' };
+    document.addEventListener('click', (e) => {
+      const eye = e.target && e.target.closest ? e.target.closest('[data-eye]') : null;
+      if (!eye) return;
+      e.preventDefault(); e.stopPropagation();
+      const id = eye.getAttribute('data-eye');
+      const inp = document.getElementById(id);
+      if (!inp) return;
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      eye.classList.toggle('on', show);
+      eye.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+    }, true);
+    document.addEventListener('input', (e) => {
+      const id = e.target && e.target.id;
+      if (id === 'apPw' || id === 'spPass') paintRules(id, e.target.value);
+    });
     document.addEventListener('change', (e) => {
       const id = e.target && e.target.id;
       if (!names[id] || !e.target.files || !e.target.files[0]) return;
@@ -3706,7 +3772,7 @@ body{overscroll-behavior-y:none;}
 
   /* ---------- 加入申请（带四张截图） ---------- */
   function proofGrid(ev) {
-    const items = [['age', '年龄'], ['xhs', '小红书'], ['qq', 'QQ'], ['follow', '关注']];
+    const items = [['xhs', '小红书+QQ'], ['follow', '关注我的'], ['age', '支付宝 16+'], ['qq', 'QQ 资料']];
     return '<div class="row gap-10" style="margin-top:12px;flex-wrap:wrap">' + items.map((it) => {
       const path = (ev || {})[it[0]] || '';
       return '<div style="flex:1 1 44%;min-width:130px">' +
@@ -4098,6 +4164,13 @@ body{overscroll-behavior-y:none;}
     } catch (e) {}
   }
 
+  function pwStrong(v) {
+    return {
+      ok: (v || '').length >= 10 && /[A-Z]/.test(v) && /[a-z]/.test(v) && /[0-9]/.test(v),
+      len: (v || '').length >= 10, upper: /[A-Z]/.test(v), lower: /[a-z]/.test(v), digit: /[0-9]/.test(v)
+    };
+  }
+
   function render() {
     if (Store.loadError) {
       viewEl.innerHTML = '<div class="gate"><div class="g-mark">Z</div>' +
@@ -4366,7 +4439,7 @@ body{overscroll-behavior-y:none;}
       const fail = (m) => { if (err) err.textContent = m; toast(m); };
       if (!name || !email || !p1) return fail('昵称、邮箱、密码都要填');
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('邮箱格式不太对');
-      if (p1.length < 8) return fail('密码至少 8 位');
+      if (!pwStrong(p1).ok) return fail('密码不够强：至少 10 位，并且要有大写、小写和数字');
       if (p1 !== p2) return fail('两次输入的密码不一样');
       if (err) err.textContent = '';
       Store.setupAdmin({ name, email, pass: p1 }).then((r) => {
@@ -4399,15 +4472,17 @@ body{overscroll-behavior-y:none;}
     /* 提交加入申请（四张截图） */
     const apB = t.closest('#apSubmit');
     if (apB) {
-      const name = val('apName'), email = val('apEmail'), pw = val('apPw'), reason = val('apReason');
+      const name = val('apName'), email = val('apEmail'), pw = val('apPw'), reason0 = val('apReason'), qq = val('apQqNum').replace(/\s/g, '');
       const err = $('apErr');
       const fail = (m) => { if (err) err.textContent = m; toast(m); };
       const f = { age: fileOf('apAge'), xhs: fileOf('apXhs'), qq: fileOf('apQq'), follow: fileOf('apFollow') };
       if (!name || !email || !pw) return fail('昵称、邮箱、密码都要填');
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('邮箱格式不太对');
-      if (pw.length < 8) return fail('密码至少 8 位');
-      if ((reason || '').trim().length < 5) return fail('申请理由写清楚一点，别只写「求进」');
-      if (!f.age || !f.xhs || !f.qq || !f.follow) return fail('四张截图都要选上：年龄、小红书、QQ、关注');
+      if (!pwStrong(pw).ok) return fail('密码不够强：至少 10 位，并且要有大写、小写和数字');
+      if (!/^\d{5,12}$/.test(qq)) return fail('QQ 号填一下，5–12 位数字，要和截图里的一致');
+      if ((reason0 || '').trim().length < 5) return fail('申请理由写清楚一点，别只写「求进」');
+      const reason = 'QQ：' + qq + '\n' + reason0;
+      if (!f.xhs || !f.follow || !f.age || !f.qq) return fail('四张截图都要选上：小红书+QQ、关注我的、支付宝、QQ 资料页');
       if (err) err.textContent = '';
       apB.disabled = true; apB.textContent = '正在上传材料…';
       Store.applyJoin({ name, email, pass: pw, reason, files: f }).then((r) => {
@@ -4828,7 +4903,7 @@ body{overscroll-behavior-y:none;}
       const fail = (m) => { if (err) err.textContent = m; toast(m); };
       if (!name || !email || !p1) return fail('昵称、邮箱、密码都要填');
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('邮箱格式不太对');
-      if (p1.length < 8) return fail('密码至少 8 位');
+      if (!pwStrong(p1).ok) return fail('密码不够强：至少 10 位，并且要有大写、小写和数字');
       if (p1 !== p2) return fail('两次输入的密码不一样');
       if (err) err.textContent = '';
       const r = await Store.setupAdmin({ name, email, pass: p1 });
@@ -5257,6 +5332,7 @@ body{overscroll-behavior-y:none;}
 
   /* ---------- 启动 ---------- */
   Store.onChange = render;
+  if (window.ZG && ZG.bindChanges) ZG.bindChanges();
   window.addEventListener('hashchange', render);
   if (!location.hash) location.hash = '#/home';
   render();
