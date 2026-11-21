@@ -1459,6 +1459,13 @@ body{overscroll-behavior-y:none;}
   .v2-opts--row .v2-opt b{font-size:10px!important;}
 }
 
+/* v5.7 手机输入框：字号 16 防 iOS 自动放大，触控不延迟 */
+.gate .input,.gate .textarea{pointer-events:auto!important;-webkit-user-select:text!important;user-select:text!important;touch-action:manipulation!important;}
+@media (max-width:520px){
+  .input,.textarea,.select,.gate .input,.gate .textarea,input,textarea,select{font-size:16px!important;}
+  .gate .input{height:48px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -3481,9 +3488,9 @@ body{overscroll-behavior-y:none;}
   function loginForm() {
     const mail = (Store.lastEmail && Store.lastEmail()) || '';
     return '<div class="field"><div class="label">邮箱</div>' +
-        '<input class="input" id="enEmail" type="email" inputmode="email" value="' + esc(mail) + '" placeholder="you@example.com" autocomplete="username"></div>' +
+        '<input class="input" id="enEmail" type="email" inputmode="email" value="' + esc(mail) + '" placeholder="you@example.com" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
       '<div class="field"><div class="label">密码</div>' +
-        '<input class="input" id="enPw" type="password" placeholder="••••••••" autocomplete="current-password"></div>' +
+        '<input class="input" id="enPw" type="password" placeholder="输入密码" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
       '<div class="err" id="enErr"></div>' +
       '<button class="btn btn--ink btn-block" id="enSubmit" style="height:46px">登录</button>' +
       '<p class="hint" style="text-align:center;margin-top:10px">这台设备会记住登录状态，下次打开直接进来。</p>';
@@ -4060,6 +4067,37 @@ body{overscroll-behavior-y:none;}
   function go(hash) { location.hash = hash; }
   function setAuthMode(m) { V2.setAuthMode(m); render(); }
 
+  /* 入口页/申请页：渲染会重建 DOM，先把用户已经打进输入框的值存下来，渲染后补回去 */
+  function keepEntryValues() {
+    const ae = document.activeElement;
+    const out = { vals: {}, focus: null, start: null, end: null };
+    if (!ae || !viewEl.contains(ae)) return out;
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return out;
+    viewEl.querySelectorAll('input,textarea,select').forEach(function (el) {
+      if (!el.id) return;
+      if (el.type === 'file' || el.type === 'radio' || el.type === 'checkbox') return;
+      out.vals[el.id] = el.value;
+    });
+    out.focus = ae.id || null;
+    try { out.start = ae.selectionStart; out.end = ae.selectionEnd; } catch (e) {}
+    return out;
+  }
+  function restoreEntryValues(keep) {
+    if (!keep || !keep.vals) return;
+    Object.keys(keep.vals).forEach(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (keep.vals[id] && !el.value) el.value = keep.vals[id];
+    });
+    if (!keep.focus) return;
+    const el = document.getElementById(keep.focus);
+    if (!el || !/^(INPUT|TEXTAREA)$/.test(el.tagName)) return;
+    try {
+      el.focus({ preventScroll: true });
+      if (keep.start != null && el.type !== 'email' && el.type !== 'password') el.setSelectionRange(keep.start, keep.end);
+    } catch (e) {}
+  }
+
   function render() {
     if (Store.loadError) {
       viewEl.innerHTML = '<div class="gate"><div class="g-mark">Z</div>' +
@@ -4119,8 +4157,10 @@ body{overscroll-behavior-y:none;}
     renderSideUser();
     ZV.renderAppBar(navRoute, sub);
     viewEl.classList.toggle('chat-mode', navRoute === 'chat');
+    const keep = keepEntryValues();
     viewEl.innerHTML = html;
     bind();
+    restoreEntryValues(keep);
     if (ZG && ZG.hydrateProofs) ZG.hydrateProofs();
 
     const key = route + '/' + sub + '/' + navRoute;
